@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: "primary" | "accent" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
   children: ReactNode;
@@ -9,19 +9,21 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses = {
   primary:
-    "bg-primary text-white hover:bg-primary-hover disabled:opacity-50",
+    "bg-navy-700 text-text-on-dark hover:bg-navy-600 disabled:opacity-50",
+  accent:
+    "bg-accent text-white hover:bg-accent-hover disabled:opacity-50",
   secondary:
-    "bg-secondary text-white hover:bg-secondary-hover disabled:opacity-50",
+    "bg-transparent text-text-secondary border border-border-strong hover:bg-surface-2 disabled:opacity-40",
   ghost:
-    "bg-transparent text-text-muted hover:text-text hover:bg-surface-2 border border-border disabled:opacity-40",
+    "bg-transparent text-text-secondary hover:bg-surface-2 disabled:opacity-40",
   danger:
     "bg-error text-white hover:opacity-90 disabled:opacity-50",
 };
 
 const sizeClasses = {
-  sm: "h-8 px-3 text-sm",
-  md: "h-10 px-4 text-sm",
-  lg: "h-12 px-6 text-base",
+  sm: "h-8 px-3 text-xs",
+  md: "h-9 px-4 text-xs",
+  lg: "h-11 px-6 text-sm",
 };
 
 export function Button({
@@ -37,8 +39,8 @@ export function Button({
     <button
       disabled={disabled || loading}
       className={[
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors cursor-pointer select-none",
-        "focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2",
+        "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors cursor-pointer select-none",
+        "focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2",
         variantClasses[variant],
         sizeClasses[size],
         className,

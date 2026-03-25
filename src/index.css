@@ -1,40 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  /* Brand palette — change these to retheme the entire app */
-  --color-primary:       #6366f1;
-  --color-primary-hover: #4f46e5;
-  --color-primary-muted: #6366f120;
+  /* === V6 COLOR RAMP === */
+  --color-navy-900: #1E3340;
+  --color-navy-800: #2A4454;
+  --color-navy-700: #2F4858;
+  --color-navy-600: #3B5968;
+  --color-slate-500: #4E6D78;
+  --color-slate-400: #6A8A8F;
+  --color-slate-300: #8BA4A0;
+  --color-bone-200: #C8C4B3;
+  --color-bone-100: #DBD8C8;
+  --color-bone-50:  #E6E3D2;
+  --color-bone-25:  #EDEBE0;
+  --color-bone-0:   #F4F2E9;
 
-  --color-secondary:       #10b981;
-  --color-secondary-hover: #059669;
-  --color-secondary-muted: #10b98120;
+  /* === ACCENT === */
+  --color-accent:         #D4763A;
+  --color-accent-hover:   #C06830;
+  --color-accent-subtle:  #F0DFD0;
+  --color-accent-on-dark: #E8955A;
 
-  /* Surfaces */
-  --color-bg:        #0a0a0f;
-  --color-surface:   #13131a;
-  --color-surface-2: #1c1c27;
-  --color-border:    #2a2a3a;
+  /* === SEMANTIC ALIASES (backward compat) === */
+  --color-primary:       #D4763A;
+  --color-primary-hover: #C06830;
+  --color-primary-muted: #F0DFD0;
 
-  /* Text */
-  --color-text:       #f0f0f5;
-  --color-text-muted: #8888a8;
-  --color-text-faint: #4a4a6a;
+  /* === SURFACES === */
+  --color-bg:        #EDEBE0;
+  --color-surface:   #F4F2E9;
+  --color-surface-2: #E6E3D2;
 
-  /* Feedback */
-  --color-error:   #ef4444;
-  --color-success: #10b981;
+  /* === BORDERS === */
+  --color-border:        #E2DFCF;
+  --color-border-light:  #DBD8C8;
+  --color-border-strong: #C8C4B3;
 
-  /* Layout */
+  /* === TEXT === */
+  --color-text:             #1E3340;
+  --color-text-secondary:   #4E6D78;
+  --color-text-muted:       #8BA4A0;
+  --color-text-faint:       #8BA4A0;
+  --color-text-on-dark:     #F4F2E9;
+  --color-text-on-dark-sec: #B8BFC4;
+  --color-text-on-dark-mut: #7A8E96;
+
+  /* === MATERIAL TYPES === */
+  --color-type-video: #2F4858;
+  --color-type-audio: #6A8A8F;
+  --color-type-image: #D4763A;
+  --color-type-brand: #8BA4A0;
+
+  /* === FEEDBACK === */
+  --color-success:        #3D8B5E;
+  --color-success-subtle: #D8EBDF;
+  --color-warning:        #C4882A;
+  --color-warning-subtle: #F0E3CB;
+  --color-error:          #C44A3F;
+  --color-error-subtle:   #F2DAD7;
+  --color-info:           #4A7E9B;
+  --color-info-subtle:    #D6E8F0;
+
+  /* === FONTS === */
+  --font-sans:    'Sora', sans-serif;
+  --font-display: 'Sora', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  /* === RADIUS === */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+
+  /* === LAYOUT === */
   --height-nav: 64px;
 }
 
 html {
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  /* Prevent layout shift when scrollbar appears */
   scrollbar-gutter: stable;
 }
 
