@@ -17,14 +17,11 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<HomePage />} />
+      <Route path="/landing" element={<LandingPage />} />
       <Route
         path="/auth"
-        element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />}
-      />
-      <Route
-        path="/dashboard"
-        element={user ? <HomePage /> : <Navigate to="/auth" replace />}
+        element={user ? <Navigate to="/" replace /> : <AuthPage />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

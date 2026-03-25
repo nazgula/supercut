@@ -98,7 +98,9 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col">
+    <div className="min-h-screen text-text flex flex-col"
+      style={{ background: "linear-gradient(to bottom, #1E3340 0%, #2F4858 18%, #EDEBE0 52%)" }}
+    >
       <Nav />
       <main className="flex-1">
         <Hero />
