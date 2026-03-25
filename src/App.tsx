@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import LandingPage from "./pages/LandingPage";
+import AuthPage from "./pages/AuthPage";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -16,10 +17,13 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      {/* Redirect logged-in users away from landing */}
+      <Route
+        path="/auth"
+        element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />}
+      />
       <Route
         path="/dashboard"
-        element={user ? <div className="p-8 text-text">Dashboard coming soon</div> : <Navigate to="/" replace />}
+        element={user ? <div className="p-8 text-text">Dashboard — coming soon</div> : <Navigate to="/auth" replace />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
