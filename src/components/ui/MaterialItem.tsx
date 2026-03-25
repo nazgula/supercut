@@ -82,7 +82,7 @@ export function MaterialItem({
         {/* Content */}
         <div className="flex flex-col justify-center min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
-            <span className="text-xs font-medium text-text truncate">{title}</span>
+            <span className="text-xs font-medium text-text truncate" title={title}>{title}</span>
             {flag && (
               <span className={["text-[9px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded-[3px] flex-shrink-0", flagClasses[flag.severity]].join(" ")}>
                 {flag.label}
@@ -105,7 +105,7 @@ export function MaterialItem({
       style={{ borderLeftColor: borderColor, borderLeftWidth: "3px" }}
     >
       <div className="flex items-center gap-2 mb-1 min-w-0">
-        <span className="text-xs font-medium text-text flex-1 truncate">{title}</span>
+        <span className="text-xs font-medium text-text flex-1 truncate" title={title}>{title}</span>
         {flag && (
           <span className={["text-[9px] font-semibold uppercase tracking-[0.04em] px-1.5 py-0.5 rounded-[3px] flex-shrink-0", flagClasses[flag.severity]].join(" ")}>
             {flag.label}

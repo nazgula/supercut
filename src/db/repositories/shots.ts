@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
+import { parseJsonOrNull } from "../utils";
 
 export interface Transcript {
   text: string;
@@ -26,7 +27,7 @@ function rowToShot(row: Record<string, unknown>): Shot {
     description: row.description as string,
     startTime: row.start_time as number,
     endTime: row.end_time as number,
-    transcript: row.transcript ? JSON.parse(row.transcript as string) : null,
+    transcript: parseJsonOrNull<Transcript>(row.transcript),
     createdAt: row.created_at as string,
   };
 }

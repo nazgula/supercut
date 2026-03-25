@@ -114,7 +114,7 @@ export default function AuthPage() {
           <p className="text-center text-sm text-text-muted mt-4">
             {mode === "login" ? "No account?" : "Already have an account?"}{" "}
             <button
-              onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
+              onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setName(""); setEmail(""); setPassword(""); }}
               className="text-primary hover:underline cursor-pointer"
             >
               {mode === "login" ? "Sign up" : "Sign in"}

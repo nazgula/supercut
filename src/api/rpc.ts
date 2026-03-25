@@ -8,7 +8,7 @@ interface RpcResponse<T> {
 }
 
 let authToken: string | null = null;
-let _requestId = 0;
+let _refreshPromise: Promise<boolean> | null = null;
 
 export function setAuthToken(token: string | null): void {
   authToken = token;
@@ -37,7 +37,7 @@ export async function rpcCall<T = unknown>(
       jsonrpc: "2.0",
       method,
       params,
-      id: ++_requestId,
+      id: crypto.randomUUID(),
     }),
   });
 
@@ -66,7 +66,14 @@ export class RpcError extends Error {
   }
 }
 
-export async function refreshAccessToken(): Promise<boolean> {
+export function refreshAccessToken(): Promise<boolean> {
+  // Deduplicate concurrent refresh calls — all callers share the same promise.
+  if (_refreshPromise) return _refreshPromise;
+  _refreshPromise = _doRefresh().finally(() => { _refreshPromise = null; });
+  return _refreshPromise;
+}
+
+async function _doRefresh(): Promise<boolean> {
   const refreshToken = localStorage.getItem("refreshToken");
   if (!refreshToken) return false;
   try {
@@ -77,7 +84,7 @@ export async function refreshAccessToken(): Promise<boolean> {
         jsonrpc: "2.0",
         method: "auth.refresh",
         params: { refreshToken },
-        id: ++_requestId,
+        id: crypto.randomUUID(),
       }),
     });
     const data = await response.json();
@@ -87,7 +94,7 @@ export async function refreshAccessToken(): Promise<boolean> {
       return true;
     }
   } catch {
-    // refresh failed
+    // refresh failed — caller decides what to do
   }
   return false;
 }

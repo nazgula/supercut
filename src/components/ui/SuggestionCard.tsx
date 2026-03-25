@@ -62,9 +62,9 @@ export function SuggestionCard({
       {/* Preview */}
       {preview && preview.length > 0 && (
         <div className="flex flex-wrap gap-2 bg-bg rounded-sm px-3 py-2 mb-3">
-          {preview.map((item, i) => (
+          {preview.map((item) => (
             <span
-              key={i}
+              key={item.name}
               className="flex items-center gap-1 text-[11px] font-mono text-text-secondary"
             >
               <span

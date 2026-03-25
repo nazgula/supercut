@@ -63,7 +63,9 @@ export async function insertClip(data: Pick<Clip, "projectId" | "title" | "filen
      data.errorMessage ?? null, now, now]
   );
   persistDb(db);
-  return (await getClip(id))!;
+  const clip = await getClip(id);
+  if (!clip) throw new Error(`insertClip: failed to read back inserted clip ${id}`);
+  return clip;
 }
 
 export async function updateClip(id: string, fields: Partial<Omit<Clip, "id" | "projectId" | "createdAt">>): Promise<void> {

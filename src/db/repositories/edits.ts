@@ -57,7 +57,9 @@ export async function insertEdit(data: Pick<Edit, "projectId" | "title"> & Parti
     [id, data.projectId, data.title, data.prompt ?? null, null, null, null, data.script ?? null, now, now]
   );
   persistDb(db);
-  return (await getEdit(id))!;
+  const edit = await getEdit(id);
+  if (!edit) throw new Error(`insertEdit: failed to read back inserted edit ${id}`);
+  return edit;
 }
 
 export async function updateEdit(id: string, fields: Partial<Omit<Edit, "id" | "projectId" | "createdAt">>): Promise<void> {

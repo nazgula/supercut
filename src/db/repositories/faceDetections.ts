@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
+import { parseJsonOrNull } from "../utils";
 
 export interface FaceDetection {
   id: string;
@@ -27,12 +28,12 @@ function rowToFace(row: Record<string, unknown>): FaceDetection {
     groupId: (row.group_id as string | null) ?? null,
     faceImagePath: (row.face_image_path as string | null) ?? null,
     frameImagePath: (row.frame_image_path as string | null) ?? null,
-    embedding: row.embedding ? JSON.parse(row.embedding as string) : null,
-    bbox: row.bbox ? JSON.parse(row.bbox as string) : null,
+    embedding: parseJsonOrNull<number[]>(row.embedding),
+    bbox: parseJsonOrNull<[number, number, number, number]>(row.bbox),
     frameTime: (row.frame_time as number | null) ?? null,
     qualityScore: (row.quality_score as number | null) ?? null,
     detScore: (row.det_score as number | null) ?? null,
-    pose: row.pose ? JSON.parse(row.pose as string) : null,
+    pose: parseJsonOrNull<{ yaw: number; pitch: number; roll: number }>(row.pose),
     frameWidth: (row.frame_width as number | null) ?? null,
     frameHeight: (row.frame_height as number | null) ?? null,
     createdAt: row.created_at as string,

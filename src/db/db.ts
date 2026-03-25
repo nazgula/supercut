@@ -40,6 +40,11 @@ export async function getDb(): Promise<Database> {
 /** Persist the in-memory DB to localStorage. Call after every write. */
 export function persistDb(db: Database): void {
   const data = db.export();
-  const b64 = btoa(String.fromCharCode(...data));
-  localStorage.setItem(STORAGE_KEY, b64);
+  // Chunked encoding avoids "Maximum call stack exceeded" when spreading large Uint8Arrays.
+  let binary = "";
+  const CHUNK = 8192;
+  for (let i = 0; i < data.length; i += CHUNK) {
+    binary += String.fromCharCode(...data.subarray(i, i + CHUNK));
+  }
+  localStorage.setItem(STORAGE_KEY, btoa(binary));
 }
