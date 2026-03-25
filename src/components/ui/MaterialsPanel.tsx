@@ -42,8 +42,8 @@ export function MaterialsPanel({ tabs, className = "" }: MaterialsPanelProps) {
       {/* Items */}
       <div className="p-3 flex flex-col gap-2 overflow-y-auto flex-1">
         {activeTab.items.length > 0
-          ? activeTab.items.map((item, i) => (
-              <MaterialItem key={i} {...item} className="bg-bone-25" />
+          ? activeTab.items.map((item) => (
+              <MaterialItem key={item.title} {...item} className="bg-bone-25" />
             ))
           : (
             <div className="py-8 text-center text-[11px] text-text-muted">No items</div>

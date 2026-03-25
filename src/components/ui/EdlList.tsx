@@ -68,7 +68,7 @@ export function EdlGroup({
             Drop material or use voice command
           </div>
         ) : (
-          strips.map((strip, i) => <MaterialStrip key={i} {...strip} />)
+          strips.map((strip) => <MaterialStrip key={strip.name} {...strip} />)
         )}
       </div>
     </div>
@@ -83,8 +83,8 @@ interface EdlListProps {
 export function EdlList({ groups, className = "" }: EdlListProps) {
   return (
     <div className={["flex flex-col gap-2 p-3 bg-surface-2 rounded-md", className].join(" ")}>
-      {groups.map((group, i) => (
-        <EdlGroup key={i} {...group} />
+      {groups.map((group) => (
+        <EdlGroup key={group.index} {...group} />
       ))}
     </div>
   );

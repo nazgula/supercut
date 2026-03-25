@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/Button";
 import { RpcError } from "../api/rpc";
@@ -27,7 +27,7 @@ export default function AuthPage() {
     try {
       if (mode === "login") {
         await login(email, password);
-        navigate("/dashboard");
+        navigate("/");
       } else {
         const msg = await signup(email, password, name);
         setMessage(msg);
@@ -43,9 +43,9 @@ export default function AuthPage() {
     <div className="min-h-screen bg-bg flex items-center justify-center">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <a href="/" className="text-2xl font-bold tracking-tight text-text">
+          <Link to="/" className="text-2xl font-bold tracking-tight text-text">
             super<span className="text-primary">cut</span>
-          </a>
+          </Link>
           <p className="text-text-muted text-sm mt-2">
             {mode === "login" ? "Sign in to your account" : "Create your account"}
           </p>

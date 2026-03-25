@@ -52,16 +52,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const refreshToken = localStorage.getItem("refreshToken");
     if (refreshToken) {
       rpcCall<AuthResult>("auth.refresh", { refreshToken })
-        .then(handleAuthResult)
-        .catch(() => localStorage.removeItem("refreshToken"))
-        .finally(() => setIsLoading(false));
+        .then((result) => { if (!cancelled) handleAuthResult(result); })
+        .catch(() => { if (!cancelled) localStorage.removeItem("refreshToken"); })
+        .finally(() => { if (!cancelled) setIsLoading(false); });
     } else {
       setIsLoading(false);
     }
-  }, [handleAuthResult]);
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- runs once on mount; handleAuthResult is stable
 
   const login = useCallback(
     async (email: string, password: string) => {

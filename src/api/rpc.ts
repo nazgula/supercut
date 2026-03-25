@@ -8,6 +8,7 @@ interface RpcResponse<T> {
 }
 
 let authToken: string | null = null;
+let _requestId = 0;
 
 export function setAuthToken(token: string | null): void {
   authToken = token;
@@ -36,9 +37,13 @@ export async function rpcCall<T = unknown>(
       jsonrpc: "2.0",
       method,
       params,
-      id: Date.now(),
+      id: ++_requestId,
     }),
   });
+
+  if (!response.ok) {
+    throw new RpcError(-32603, `HTTP ${response.status}: ${response.statusText}`);
+  }
 
   const data: RpcResponse<T> = await response.json();
 
@@ -72,7 +77,7 @@ export async function refreshAccessToken(): Promise<boolean> {
         jsonrpc: "2.0",
         method: "auth.refresh",
         params: { refreshToken },
-        id: Date.now(),
+        id: ++_requestId,
       }),
     });
     const data = await response.json();

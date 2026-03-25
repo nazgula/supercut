@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { ChatBubble } from "../components/ui/ChatBubble";
 import { SuggestionCard } from "../components/ui/SuggestionCard";
@@ -113,6 +114,7 @@ export default function LandingPage() {
 // ─── Nav ─────────────────────────────────────────────────────
 
 function Nav() {
+  const navigate = useNavigate();
   return (
     <header
       className="sticky top-0 z-50 bg-navy-900 border-b border-border-on-dark"
@@ -131,15 +133,11 @@ function Nav() {
           </a>
           <button
             className="text-sm text-text-on-dark-sec hover:text-text-on-dark transition-colors cursor-pointer"
-            onClick={() => (window.location.href = "/auth")}
+            onClick={() => navigate("/auth")}
           >
             Sign in
           </button>
-          <Button
-            variant="accent"
-            size="sm"
-            onClick={() => (window.location.href = "/auth?signup=1")}
-          >
+          <Button variant="accent" size="sm" onClick={() => navigate("/auth?signup=1")}>
             Get started
           </Button>
         </nav>
@@ -151,6 +149,7 @@ function Nav() {
 // ─── Hero ────────────────────────────────────────────────────
 
 function Hero() {
+  const navigate = useNavigate();
   return (
     <section className="mx-auto max-w-6xl px-8 pt-24 pb-16">
       {/* Badge */}
@@ -175,11 +174,7 @@ function Hero() {
 
       {/* CTAs */}
       <div className="flex items-center justify-center gap-3 mb-16">
-        <Button
-          variant="accent"
-          size="lg"
-          onClick={() => (window.location.href = "/auth?signup=1")}
-        >
+        <Button variant="accent" size="lg" onClick={() => navigate("/auth?signup=1")}>
           Start editing free
         </Button>
         <Button
@@ -317,6 +312,7 @@ function Features() {
 // ─── CTA ─────────────────────────────────────────────────────
 
 function Cta() {
+  const navigate = useNavigate();
   return (
     <section className="mx-auto max-w-6xl px-8 py-24 text-center">
       <h2 className="text-4xl font-bold text-text mb-4 tracking-tight">
@@ -325,11 +321,7 @@ function Cta() {
       <p className="text-text-secondary mb-8 max-w-sm mx-auto">
         No timeline scrubbing. No manual cuts. Just describe it.
       </p>
-      <Button
-        variant="accent"
-        size="lg"
-        onClick={() => (window.location.href = "/auth?signup=1")}
-      >
+      <Button variant="accent" size="lg" onClick={() => navigate("/auth?signup=1")}>
         Create free account
       </Button>
     </section>
