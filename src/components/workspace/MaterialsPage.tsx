@@ -70,6 +70,7 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<MediaTypeFilter>("video");
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -118,20 +119,36 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
   async function uploadFiles(files: FileList | File[]) {
     const token = getAuthToken();
     setUploading(true);
+    setUploadError(null);
+    const errors: string[] = [];
     try {
       for (const file of Array.from(files)) {
         const form = new FormData();
         form.append("file", file);
         form.append("projectId", projectId);
-        const res = await fetch(`${API_BASE}/upload`, {
-          method: "POST",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: form,
-        });
-        if (!res.ok) continue;
+        try {
+          const res = await fetch(`${API_BASE}/upload`, {
+            method: "POST",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: form,
+          });
+          if (!res.ok) {
+            let msg = `${file.name}: upload failed (${res.status})`;
+            try {
+              const body = await res.json() as { message?: string; error?: string };
+              if (body.message || body.error) msg = `${file.name}: ${body.message ?? body.error}`;
+            } catch { /* non-JSON response */ }
+            errors.push(msg);
+          }
+        } catch (err) {
+          errors.push(`${file.name}: network error`);
+        }
+      }
+      if (errors.length > 0) {
+        setUploadError(errors.join(" · "));
       }
       await loadClips();
-      // Start polling since new clips are processing
+      // Start polling since new clips may be processing
       if (!pollRef.current) {
         pollRef.current = setInterval(loadClips, 3000);
       }
@@ -222,6 +239,22 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
           onChange={(e) => { if (e.target.files) uploadFiles(e.target.files); }}
         />
       </div>
+
+      {/* Upload error */}
+      {uploadError && (
+        <div
+          className="flex items-start gap-2 px-3 py-2.5 rounded-lg mb-4 text-[11px]"
+          style={{ background: "var(--color-error-subtle)", color: "var(--color-error)" }}
+        >
+          <span className="flex-1">{uploadError}</span>
+          <button
+            onClick={() => setUploadError(null)}
+            className="flex-shrink-0 cursor-pointer opacity-60 hover:opacity-100"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Material list */}
       {loading ? (
