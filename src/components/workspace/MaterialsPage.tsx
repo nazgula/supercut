@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { rpcCall } from "../../api/rpc";
-import { getAuthToken, API_BASE } from "../../api/rpc";
+import { rpcCall, getAuthToken, refreshAccessToken, API_BASE } from "../../api/rpc";
 import { useApp } from "../../context/AppContext";
 import { MaterialItem } from "../ui/MaterialItem";
 import type { MaterialItemData } from "../ui/MaterialItem";
@@ -117,7 +116,6 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
   }, [clips, loadClips]);
 
   async function uploadFiles(files: FileList | File[]) {
-    const token = getAuthToken();
     setUploading(true);
     setUploadError(null);
     const errors: string[] = [];
@@ -127,11 +125,22 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
         form.append("file", file);
         form.append("projectId", projectId);
         try {
-          const res = await fetch(`${API_BASE}/upload`, {
+          let res = await fetch(`${API_BASE}/upload`, {
             method: "POST",
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {},
             body: form,
           });
+          // Token may have expired — refresh once and retry
+          if (res.status === 401) {
+            const refreshed = await refreshAccessToken();
+            if (refreshed) {
+              res = await fetch(`${API_BASE}/upload`, {
+                method: "POST",
+                headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {},
+                body: form,
+              });
+            }
+          }
           if (!res.ok) {
             let msg = `${file.name}: upload failed (${res.status})`;
             try {
@@ -140,7 +149,7 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
             } catch { /* non-JSON response */ }
             errors.push(msg);
           }
-        } catch (err) {
+        } catch {
           errors.push(`${file.name}: network error`);
         }
       }
