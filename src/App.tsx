@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
-import HomePage from "./pages/HomePage";
+import AppShell from "./pages/AppShell";
 
 function AppRoutes() {
   const { user, isLoading } = useAuth();
@@ -17,7 +17,7 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      <Route path="/" element={user ? <AppShell /> : <Navigate to="/auth" replace />} />
       <Route path="/landing" element={<LandingPage />} />
       <Route
         path="/auth"
