@@ -41,21 +41,21 @@ export function SuggestionCard({
     >
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="w-5 h-5 rounded-full bg-accent-subtle text-accent flex items-center justify-center text-[10px] flex-shrink-0">
+        <span className="w-5 h-5 rounded-full bg-accent-subtle text-accent flex items-center justify-center text-[12px] flex-shrink-0">
           ✦
         </span>
         <span className="text-[11px] font-semibold text-accent uppercase tracking-[0.04em]">
           Suggestion
         </span>
         {confidence !== undefined && (
-          <span className="ml-auto text-[10px] font-mono text-text-muted">
+          <span className="ml-auto text-[12px] font-mono text-text-muted">
             {confidence}% confidence
           </span>
         )}
       </div>
 
       {/* Body */}
-      <p className="text-[13px] text-text-secondary mb-3 leading-relaxed">
+      <p className="text-[14px] text-text-secondary mb-3 leading-relaxed">
         {text}
       </p>
 

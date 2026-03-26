@@ -73,7 +73,7 @@ export function MaterialItem({
       >
         {/* Thumbnail */}
         <div
-          className="w-16 h-11 rounded flex items-center justify-center text-[10px] font-mono text-text-on-dark-sec flex-shrink-0"
+          className="w-16 h-11 rounded flex items-center justify-center text-[12px] font-mono text-text-on-dark-sec flex-shrink-0"
           style={{ background: thumbGradient[type] }}
         >
           {thumbSymbol[type]} {duration}
@@ -161,7 +161,7 @@ export function MaterialStrip({ type, name, role, timecode, flag }: MaterialStri
         </span>
       )}
       {timecode && !flag && (
-        <span className="text-[10px] font-mono text-text-muted flex-shrink-0">{timecode}</span>
+        <span className="text-[12px] font-mono text-text-muted flex-shrink-0">{timecode}</span>
       )}
     </div>
   );

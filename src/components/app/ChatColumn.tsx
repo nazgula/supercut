@@ -262,7 +262,7 @@ export function ChatColumn() {
           {logLines.map((line, i) => (
             <div
               key={i}
-              className="text-[10px] py-0.5 flex items-center gap-1.5"
+              className="text-[12px] py-0.5 flex items-center gap-1.5"
               style={{
                 color:
                   line.state === "done"
@@ -411,7 +411,7 @@ function ChatInputBar({
         }}
       />
       <button
-        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer text-[13px]"
+        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer text-[14px]"
         style={{ background: "transparent", color: "var(--color-text-muted)", border: "1px solid var(--color-bone-50)" }}
         title="Voice input (coming soon)"
         disabled

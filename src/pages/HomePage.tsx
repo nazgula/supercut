@@ -37,7 +37,7 @@ function Sidebar({ activeProject, onSelect }: SidebarProps) {
     <aside className="w-[220px] flex-shrink-0 flex flex-col bg-surface-2 border-r border-border">
       {/* Head */}
       <div className="px-4 py-3 border-b border-border">
-        <span className="text-[13px] font-semibold text-text">
+        <span className="text-[14px] font-semibold text-text">
           SuperCut{" "}
           <span className="text-text-muted font-normal">v0.4</span>
         </span>
@@ -119,7 +119,7 @@ function Main({
       <div className="flex-1 flex flex-col items-center justify-center p-8">
         <div className="text-center max-w-[400px]">
           <h1 className="text-[20px] font-semibold text-text mb-2">SuperCut</h1>
-          <p className="text-[13px] text-text-secondary leading-relaxed">
+          <p className="text-[14px] text-text-secondary leading-relaxed">
             What are we working on today?
             <br />
             Pick a project from the sidebar, or just start describing what you

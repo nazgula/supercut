@@ -243,8 +243,8 @@ function AppPreview() {
         {/* Right: Voice session */}
         <div className="bg-surface border border-border rounded-lg overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
-            <span className="text-[13px] font-semibold text-text">Voice Session</span>
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-success-subtle text-success">
+            <span className="text-[14px] font-semibold text-text">Voice Session</span>
+            <span className="text-[12px] font-medium px-2 py-0.5 rounded-full bg-success-subtle text-success">
               Active
             </span>
           </div>

@@ -64,7 +64,7 @@ export function MaterialDetailPage({
         >
           ← Back
         </button>
-        <span className="text-[14px] font-medium flex-1 truncate" style={{ color: "var(--color-text)" }}>
+        <span className="text-[16px] font-medium flex-1 truncate" style={{ color: "var(--color-text)" }}>
           {clip.title || clip.filename}
         </span>
         {clip.duration != null && (
@@ -135,7 +135,7 @@ function ShotsTab({ shots }: { shots: Shot[] }) {
               {shot.description}
             </div>
           )}
-          <div className="text-[10px] font-mono" style={{ color: "var(--color-text-muted)" }}>
+          <div className="text-[12px] font-mono" style={{ color: "var(--color-text-muted)" }}>
             {formatTime(shot.startTime)} → {formatTime(shot.endTime)}
           </div>
         </div>

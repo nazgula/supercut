@@ -32,7 +32,7 @@ export function MaterialsPanel({ tabs, className = "" }: MaterialsPanelProps) {
             ].join(" ")}
           >
             {tab.label}
-            <span className={["font-mono ml-1 text-[10px]", i === activeIndex ? "text-accent" : "text-text-muted"].join(" ")}>
+            <span className={["font-mono ml-1 text-[12px]", i === activeIndex ? "text-accent" : "text-text-muted"].join(" ")}>
               {tab.items.length}
             </span>
           </button>

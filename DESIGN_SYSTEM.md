@@ -93,10 +93,9 @@ Supercut uses a readable, post-production-tool scale. Sizes are set with inline 
 |---|---|
 | `32px` | Landing page greeting (h1) |
 | `20px` | Section headings within panels |
-| `18px` | Edit/clip title in detail views |
-| `16px` | Body text, chat messages, landing subtitle |
-| `14px` | Tab labels, metadata, supporting text |
-| `13px` | Secondary labels, button text |
+| `18px` | Edit/clip title in detail views, landing page subtitle |
+| `16px` | Body text, chat messages, tab labels, metadata |
+| `14px` | Secondary labels, button text |
 | `12px` | Timestamps, mono metadata, back links |
 | `11px` | Flag badges, collapse controls |
 

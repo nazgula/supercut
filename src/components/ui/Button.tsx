@@ -21,8 +21,8 @@ const variantClasses = {
 };
 
 const sizeClasses = {
-  sm: "h-8 px-3 text-[13px]",
-  md: "h-9 px-4 text-[13px]",
+  sm: "h-8 px-3 text-[14px]",
+  md: "h-9 px-4 text-[14px]",
   lg: "h-11 px-6 text-[16px]",
 };
 

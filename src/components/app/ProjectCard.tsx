@@ -83,14 +83,14 @@ export function ProjectCard({ project, clipCount, onClick }: ProjectCardProps) {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div
-            className="text-[15px] font-medium truncate"
+            className="text-[16px] font-medium truncate"
             style={{ color: "var(--color-text)" }}
             title={project.name}
           >
             {project.name}
           </div>
           <div
-            className="text-[13px] truncate mt-0.5"
+            className="text-[16px] truncate mt-0.5"
             style={{ color: "var(--color-text-secondary)" }}
           >
             Video editing project

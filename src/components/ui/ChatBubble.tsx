@@ -28,14 +28,14 @@ export function ChatBubble({
       {label && (
         <div
           className={[
-            "text-[10px] font-mono uppercase tracking-wider mb-1",
+            "text-[12px] font-mono uppercase tracking-wider mb-1",
             isUser ? "text-text-on-dark-sec" : "text-text-muted",
           ].join(" ")}
         >
           {label}
         </div>
       )}
-      <p className="text-[13px] leading-relaxed">{children}</p>
+      <p className="text-[16px] leading-relaxed">{children}</p>
     </div>
   );
 }

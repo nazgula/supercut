@@ -194,7 +194,7 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
               {tab.label}
               {count > 0 && (
                 <span
-                  className="text-[10px] font-mono"
+                  className="text-[12px] font-mono"
                   style={{ color: "var(--color-accent)" }}
                 >
                   {count}
@@ -234,7 +234,7 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
             <div className="text-[12px] mb-1.5" style={{ color: "var(--color-text-secondary)" }}>
               {uploading ? "Uploading…" : "Drop files here or click to browse"}
             </div>
-            <div className="text-[10px]" style={{ color: "var(--color-text-muted)" }}>
+            <div className="text-[12px]" style={{ color: "var(--color-text-muted)" }}>
               Video, audio, and image files supported
             </div>
           </>

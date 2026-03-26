@@ -57,7 +57,7 @@ export function EdlGroup({
           </span>
         </div>
         {timecode && (
-          <span className="text-[10px] font-mono text-text-muted">{timecode}</span>
+          <span className="text-[12px] font-mono text-text-muted">{timecode}</span>
         )}
       </div>
 

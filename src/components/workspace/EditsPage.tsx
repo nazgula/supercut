@@ -57,7 +57,7 @@ export function EditsPage({ projectId }: { projectId: string }) {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="text-[14px] font-medium" style={{ color: "var(--color-text)" }}>
+        <div className="text-[16px] font-medium" style={{ color: "var(--color-text)" }}>
           Edits
         </div>
         {!showNewInput && (

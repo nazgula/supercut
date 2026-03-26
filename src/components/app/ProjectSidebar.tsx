@@ -42,7 +42,7 @@ export function ProjectSidebar() {
         style={{ borderColor: "var(--color-navy-700)" }}
       >
         <span
-          className="text-[14px] font-semibold tracking-tight"
+          className="text-[16px] font-semibold tracking-tight"
           style={{ color: "var(--color-bone-0)" }}
         >
           SuperCut

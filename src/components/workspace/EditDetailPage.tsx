@@ -277,7 +277,7 @@ function EdlTab({ timeline, clips }: { timeline: TimelineEntry[] | null; clips: 
                 {entry.label}
               </span>
             </div>
-            <div className="pl-7 text-[10px]" style={{ color: "var(--color-text-muted)" }}>
+            <div className="pl-7 text-[12px]" style={{ color: "var(--color-text-muted)" }}>
               <span className="font-mono uppercase tracking-wide mr-1">Source</span>
               {clip ? clip.title || clip.filename : entry.clip_id}
               {entry.transition && (
@@ -348,7 +348,7 @@ function RenderRow({ render }: { render: Render }) {
         <div className="text-[12px] font-medium" style={{ color: "var(--color-text)" }}>
           {filename}
         </div>
-        <div className="text-[10px] mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+        <div className="text-[12px] mt-0.5" style={{ color: "var(--color-text-muted)" }}>
           {date}
           {render.errorMessage && (
             <span style={{ color: "var(--color-error)" }}> · {render.errorMessage}</span>
@@ -356,7 +356,7 @@ function RenderRow({ render }: { render: Render }) {
         </div>
       </div>
       {render.status === "rendering" && (
-        <span className="text-[10px] font-mono" style={{ color: "var(--color-warning)" }}>
+        <span className="text-[12px] font-mono" style={{ color: "var(--color-warning)" }}>
           Rendering…
         </span>
       )}
@@ -371,7 +371,7 @@ function RenderRow({ render }: { render: Render }) {
         </a>
       )}
       {render.status === "error" && (
-        <span className="text-[10px]" style={{ color: "var(--color-error)" }}>Error</span>
+        <span className="text-[12px]" style={{ color: "var(--color-error)" }}>Error</span>
       )}
     </div>
   );

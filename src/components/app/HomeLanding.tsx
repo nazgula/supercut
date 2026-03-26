@@ -73,7 +73,7 @@ export function HomeLanding() {
           {greeting}
         </h1>
         <p
-          style={{ fontSize: "14px", color: "var(--color-text-secondary)", marginBottom: "28px" }}
+          style={{ fontSize: "18px", color: "var(--color-text-secondary)", marginBottom: "28px" }}
         >
           What are we editing today?
         </p>
@@ -101,7 +101,7 @@ export function HomeLanding() {
             disabled={creating}
             className="w-full resize-none outline-none"
             style={{
-              fontSize: "15px",
+              fontSize: "16px",
               color: "var(--color-text)",
               background: "transparent",
               fontFamily: "var(--font-sans)",
@@ -113,7 +113,7 @@ export function HomeLanding() {
               disabled={!text.trim() || creating}
               className="cursor-pointer font-medium rounded-lg transition-colors"
               style={{
-                fontSize: "14px",
+                fontSize: "16px",
                 padding: "10px 20px",
                 background: text.trim() && !creating ? "var(--color-accent)" : "var(--color-bone-100)",
                 color: text.trim() && !creating ? "white" : "var(--color-text-muted)",
@@ -137,7 +137,7 @@ export function HomeLanding() {
         <div
           className="font-medium uppercase flex-shrink-0"
           style={{
-            fontSize: "13px",
+            fontSize: "14px",
             letterSpacing: "0.5px",
             color: "var(--color-text-muted)",
             marginBottom: "16px",
