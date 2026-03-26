@@ -6,7 +6,7 @@ import type { Clip } from "../workspace/MaterialsPage";
 
 // ─── Constants ────────────────────────────────────────────────
 
-const CHAT_WIDTH = "340px";
+const CHAT_WIDTH = "40%";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -252,7 +252,7 @@ export function ChatColumn() {
       {/* Log rail */}
       {logVisible && logLines.length > 0 && (
         <div
-          className="px-4 py-2.5 border-b flex-shrink-0 max-h-[140px] overflow-y-auto"
+          className="px-[10%] py-2.5 border-b flex-shrink-0 max-h-[140px] overflow-y-auto"
           style={{
             background: "var(--color-bone-25)",
             borderColor: "var(--color-bone-50)",
@@ -299,7 +299,7 @@ export function ChatColumn() {
         />
       ) : (
         <>
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 justify-end">
+          <div className="flex-1 overflow-y-auto px-[10%] py-4 flex flex-col gap-3 justify-end">
             {messages.map((msg) => (
               <ChatBubble key={msg.id} role={msg.role === "user" ? "user" : "ai"} label={msg.role === "user" ? "You" : "Editor Assistant"}>
                 {msg.content || (msg.streaming ? "…" : "")}
@@ -336,7 +336,7 @@ function ChatLanding({
   streaming: boolean;
 }) {
   return (
-    <div className="flex-1 flex flex-col justify-center p-6">
+    <div className="flex-1 flex flex-col justify-center px-[10%] py-6">
       <div className="mb-5">
         <h2 className="text-[18px] font-medium mb-2" style={{ color: "var(--color-text)" }}>
           {hasProject ? "What are we working on?" : "What are we editing today?"}
@@ -394,7 +394,7 @@ function ChatInputBar({
 }) {
   return (
     <div
-      className="flex items-center gap-2 px-4 py-3 border-t flex-shrink-0"
+      className="flex items-center gap-2 px-[10%] py-3 border-t flex-shrink-0"
       style={{ borderColor: "var(--color-bone-50)", background: "var(--color-bone-0)" }}
     >
       <input
