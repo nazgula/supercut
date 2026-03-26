@@ -1,44 +1,23 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
+import { ProjectCard } from "./ProjectCard";
 
-// Derive a stable accent color from a string (project name)
-function projectColor(name: string): string {
-  const colors = [
-    "var(--color-navy-900)",
-    "var(--color-navy-700)",
-    "var(--color-navy-500)",
-    "#5C7A8A",
-    "#3D5A6B",
-    "#2E4A5A",
-    "#7A6040",
-    "#4A5C3D",
-  ];
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  return colors[hash % colors.length];
-}
-
-function relativeDate(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 60) return diffMin <= 1 ? "Just now" : `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDays = Math.floor(diffHr / 24);
-  if (diffDays < 30) return `${diffDays}d ago`;
-  return new Date(iso).toLocaleDateString();
-}
-
-const RECENT_COUNT = 5;
+// ─── HomeLanding ───────────────────────────────────────────────
+//
+// Two-column layout on a 12-column CSS grid:
+//   col 1       — left margin (bone-0)
+//   cols 2–5    — chat/greeting side (bone-0)
+//   cols 6–11   — project list side (bone-25)
+//   col 12      — right margin (bone-25)
+//
+// At xl (≥1280px): margins widen to 2 cols each, content shifts inward.
 
 export function HomeLanding() {
   const { projects, projectsLoading, setActiveProject, createProject, setPendingMessage } = useApp();
   const { user } = useAuth();
   const [text, setText] = useState("");
   const [creating, setCreating] = useState(false);
-  const [showAll, setShowAll] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const firstName = user?.name?.split(" ")[0] ?? "there";
   const hour = new Date().getHours();
@@ -52,9 +31,7 @@ export function HomeLanding() {
     if (!trimmed || creating) return;
     setCreating(true);
     try {
-      const projectName = trimmed.slice(0, 40);
-      const project = await createProject(projectName);
-      // Store the original text as the first chat message
+      const project = await createProject(trimmed.slice(0, 40));
       setPendingMessage(trimmed);
       setActiveProject(project.id);
     } finally {
@@ -62,147 +39,136 @@ export function HomeLanding() {
     }
   }
 
-  const recentProjects = projects.slice().sort(
+  const sortedProjects = projects.slice().sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
-  const visibleProjects = showAll ? recentProjects : recentProjects.slice(0, RECENT_COUNT);
 
   return (
     <div
-      className="h-screen flex flex-col overflow-hidden"
-      style={{ background: "var(--color-bone-0)" }}
+      className="h-screen overflow-hidden"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr repeat(10, 1fr) 1fr",
+        background: "var(--color-bone-25)",
+      }}
     >
-      {/* Centered content area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-[680px] mx-auto px-6 pt-[18vh] pb-16">
+      {/* Left margin — bone-0 to match chat column */}
+      <div style={{ background: "var(--color-bone-0)", gridColumn: "1 / 2" }} />
 
-          {/* Greeting */}
-          <h1
-            className="text-[32px] font-semibold mb-2 leading-tight"
-            style={{ color: "var(--color-text)" }}
-          >
-            {greeting}
-          </h1>
-          <p
-            className="text-[14px] mb-7"
-            style={{ color: "var(--color-text-secondary)" }}
-          >
-            What are we editing today?
-          </p>
+      {/* Chat / greeting column — cols 2–5 */}
+      <div
+        className="flex flex-col justify-center overflow-hidden"
+        style={{
+          gridColumn: "2 / 6",
+          background: "var(--color-bone-0)",
+          borderRight: "1px solid var(--color-bone-50)",
+          padding: "0 18%",
+        }}
+      >
+        {/* Greeting */}
+        <h1
+          className="font-semibold leading-tight"
+          style={{ fontSize: "32px", color: "var(--color-text)", marginBottom: "6px" }}
+        >
+          {greeting}
+        </h1>
+        <p
+          style={{ fontSize: "14px", color: "var(--color-text-secondary)", marginBottom: "28px" }}
+        >
+          What are we editing today?
+        </p>
 
-          {/* Chat input */}
-          <div
-            className="rounded-xl border overflow-hidden mb-10"
-            style={{ borderColor: "var(--color-bone-50)", background: "white" }}
-          >
-            <textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleStart();
-                }
+        {/* Input box */}
+        <div
+          className="rounded-[10px] overflow-hidden"
+          style={{
+            background: "var(--color-bone-25)",
+            border: "1px solid var(--color-bone-50)",
+            padding: "16px",
+          }}
+        >
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleStart();
+              }
+            }}
+            placeholder="Describe your project — footage type, story, characters…"
+            rows={3}
+            disabled={creating}
+            className="w-full resize-none outline-none"
+            style={{
+              fontSize: "15px",
+              color: "var(--color-text)",
+              background: "transparent",
+              fontFamily: "var(--font-sans)",
+            }}
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={handleStart}
+              disabled={!text.trim() || creating}
+              className="cursor-pointer font-medium rounded-lg transition-colors"
+              style={{
+                fontSize: "14px",
+                padding: "10px 20px",
+                background: text.trim() && !creating ? "var(--color-accent)" : "var(--color-bone-100)",
+                color: text.trim() && !creating ? "white" : "var(--color-text-muted)",
               }}
-              placeholder="Describe your project — footage type, story, characters…"
-              rows={3}
-              disabled={creating}
-              className="w-full px-4 pt-3.5 pb-2 text-[13px] resize-none outline-none"
-              style={{ color: "var(--color-text)", background: "transparent" }}
-            />
-            <div className="flex justify-end px-3 pb-2.5">
-              <button
-                onClick={handleStart}
-                disabled={!text.trim() || creating}
-                className="px-4 py-1.5 rounded-lg text-[12px] font-medium cursor-pointer transition-opacity"
-                style={{
-                  background: text.trim() && !creating ? "var(--color-accent)" : "var(--color-bone-50)",
-                  color: text.trim() && !creating ? "white" : "var(--color-text-muted)",
-                }}
-              >
-                {creating ? "Creating…" : "Start →"}
-              </button>
-            </div>
+            >
+              {creating ? "Creating…" : "Start →"}
+            </button>
           </div>
-
-          {/* Recent projects */}
-          {!projectsLoading && projects.length > 0 && (
-            <div>
-              <div
-                className="text-[11px] font-semibold uppercase tracking-widest mb-3"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                Recent Projects
-              </div>
-
-              <div
-                className={[
-                  "flex flex-wrap gap-3",
-                  showAll ? "max-h-[400px] overflow-y-auto pr-1" : "",
-                ].join(" ")}
-              >
-                {visibleProjects.map((project) => (
-                  <button
-                    key={project.id}
-                    onClick={() => setActiveProject(project.id)}
-                    className="group flex flex-col rounded-xl overflow-hidden border text-left transition-all cursor-pointer hover:shadow-md"
-                    style={{
-                      width: "150px",
-                      borderColor: "var(--color-bone-50)",
-                      background: "var(--color-bone-0)",
-                    }}
-                  >
-                    {/* Color strip */}
-                    <div
-                      className="h-[40px] w-full flex-shrink-0"
-                      style={{ background: projectColor(project.name) }}
-                    />
-                    {/* Info */}
-                    <div className="px-3 py-2.5 flex-1">
-                      <div
-                        className="text-[12px] font-medium truncate mb-0.5"
-                        style={{ color: "var(--color-text)" }}
-                        title={project.name}
-                      >
-                        {project.name}
-                      </div>
-                      <div
-                        className="text-[10px]"
-                        style={{ color: "var(--color-text-muted)" }}
-                      >
-                        {relativeDate(project.updatedAt)}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {!showAll && recentProjects.length > RECENT_COUNT && (
-                <button
-                  onClick={() => setShowAll(true)}
-                  className="mt-3 text-[11px] cursor-pointer"
-                  style={{ color: "var(--color-navy-700)" }}
-                >
-                  More ({recentProjects.length - RECENT_COUNT} more projects)
-                </button>
-              )}
-            </div>
-          )}
-
-          {projectsLoading && (
-            <div className="text-[12px]" style={{ color: "var(--color-text-muted)" }}>
-              Loading projects…
-            </div>
-          )}
-
-          {!projectsLoading && projects.length === 0 && (
-            <div className="text-[12px]" style={{ color: "var(--color-text-muted)" }}>
-              No projects yet — describe your first edit above to get started.
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Project list column — cols 6–11 */}
+      <div
+        className="flex flex-col overflow-hidden"
+        style={{
+          gridColumn: "6 / 12",
+          background: "var(--color-bone-25)",
+          padding: "20vh 20% 20vh",
+        }}
+      >
+        <div
+          className="font-medium uppercase flex-shrink-0"
+          style={{
+            fontSize: "13px",
+            letterSpacing: "0.5px",
+            color: "var(--color-text-muted)",
+            marginBottom: "16px",
+          }}
+        >
+          Recent Projects
+        </div>
+
+        <div className="flex-1 overflow-y-auto min-h-0 flex flex-col gap-2">
+          {projectsLoading && (
+            <p style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>Loading…</p>
+          )}
+
+          {!projectsLoading && sortedProjects.length === 0 && (
+            <p style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
+              No projects yet — describe your first edit on the left.
+            </p>
+          )}
+
+          {sortedProjects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              onClick={() => setActiveProject(project.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Right margin — bone-25 to match project column */}
+      <div style={{ background: "var(--color-bone-25)", gridColumn: "12 / 13" }} />
     </div>
   );
 }
