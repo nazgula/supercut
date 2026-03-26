@@ -87,19 +87,18 @@ Used as left-border accents on clip/material rows.
 
 ### Size scale
 
-Supercut uses a compact, information-dense scale. All sizes are set with inline `text-[Npx]` in Tailwind.
+Supercut uses a readable, post-production-tool scale. Sizes are set with inline `text-[Npx]` Tailwind classes throughout the codebase — there is no single theme token controlling them. When changing the scale, a global find-replace across `src/` is required.
 
 | Size | Use |
 |---|---|
 | `32px` | Landing page greeting (h1) |
-| `18px` | Section headings within panels |
-| `16px` | Edit/clip title in detail views |
-| `14px` | Landing page subtitle |
-| `13px` | Chat message body |
-| `12px` | Standard body text, tab labels, metadata |
-| `11px` | Secondary labels, button text, back links |
-| `10px` | Timestamps, log rail, mono metadata |
-| `9px` | Flag badges, collapse controls |
+| `20px` | Section headings within panels |
+| `18px` | Edit/clip title in detail views |
+| `16px` | Body text, chat messages, landing subtitle |
+| `14px` | Tab labels, metadata, supporting text |
+| `13px` | Secondary labels, button text |
+| `12px` | Timestamps, mono metadata, back links |
+| `11px` | Flag badges, collapse controls |
 
 ### Weight conventions
 
