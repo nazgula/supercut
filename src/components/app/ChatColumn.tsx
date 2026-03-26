@@ -4,6 +4,10 @@ import { API_BASE, getAuthToken } from "../../api/rpc";
 import { ChatBubble } from "../ui/ChatBubble";
 import type { Clip } from "../workspace/MaterialsPage";
 
+// ─── Constants ────────────────────────────────────────────────
+
+const CHAT_WIDTH = "340px";
+
 // ─── Types ────────────────────────────────────────────────────
 
 interface Message {
@@ -23,7 +27,7 @@ interface LogLine {
 // ─── ChatColumn ───────────────────────────────────────────────
 
 export function ChatColumn() {
-  const { page, activeProjectId, navigate } = useApp();
+  const { page, activeProjectId, navigate, pendingMessage, setPendingMessage } = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -33,6 +37,7 @@ export function ChatColumn() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevClipsRef = useRef<Clip[]>([]);
   const logCollapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSentRef = useRef(false);
 
   const hasProject = activeProjectId != null;
   const hasMessages = messages.length > 0;
@@ -88,6 +93,20 @@ export function ChatColumn() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Auto-send pending message when a project becomes active
+  useEffect(() => {
+    if (!activeProjectId || !pendingMessage || pendingSentRef.current) return;
+    pendingSentRef.current = true;
+    const msg = pendingMessage;
+    setPendingMessage(null);
+    // Defer so component is fully mounted before streaming starts
+    setTimeout(() => {
+      pendingSentRef.current = false;
+      handleSendText(msg);
+    }, 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProjectId, pendingMessage]);
+
   const buildUiContext = useCallback(() => {
     const p = page;
     return {
@@ -99,9 +118,18 @@ export function ChatColumn() {
     };
   }, [page]);
 
-  async function handleSend() {
-    const text = input.trim();
+  async function handleSendText(overrideText?: string) {
+    const text = (overrideText ?? input).trim();
     if (!text || streaming || !activeProjectId) return;
+    return _sendMessage(text);
+  }
+
+  async function handleSend() {
+    return handleSendText();
+  }
+
+  async function _sendMessage(text: string) {
+    if (!activeProjectId) return;
 
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
@@ -214,29 +242,13 @@ export function ChatColumn() {
 
   return (
     <div
-      className="flex flex-col flex-shrink-0 border-l"
+      className="flex flex-col flex-shrink-0 border-r"
       style={{
-        width: "40%",
+        width: CHAT_WIDTH,
         background: "var(--color-bone-0)",
         borderColor: "var(--color-bone-50)",
       }}
     >
-      {/* Header */}
-      <div
-        className="flex items-center gap-2 px-4 py-3.5 border-b flex-shrink-0"
-        style={{ borderColor: "var(--color-bone-50)" }}
-      >
-        <div
-          className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0"
-          style={{ background: "var(--color-accent)", color: "white" }}
-        >
-          E
-        </div>
-        <span className="text-[12px] font-medium" style={{ color: "var(--color-text)" }}>
-          Editor Assistant
-        </span>
-      </div>
-
       {/* Log rail */}
       {logVisible && logLines.length > 0 && (
         <div

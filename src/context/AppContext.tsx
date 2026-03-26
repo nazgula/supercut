@@ -41,6 +41,9 @@ interface AppContextValue {
 
   sidebarOpen: boolean;
   toggleSidebar: () => void;
+
+  pendingMessage: string | null;
+  setPendingMessage: (msg: string | null) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -59,6 +62,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [page, setPage] = useState<WorkspacePage>({ type: "landing" });
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   const refreshProjects = useCallback(async () => {
     try {
@@ -109,6 +113,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         navigate,
         sidebarOpen,
         toggleSidebar,
+        pendingMessage,
+        setPendingMessage,
       }}
     >
       {children}

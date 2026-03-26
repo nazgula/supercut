@@ -7,7 +7,7 @@ const TAB_LABELS: Array<{ type: "materials" | "characters" | "edits"; label: str
 ];
 
 export function WorkspaceHeader() {
-  const { page, navigate, toggleSidebar, projects, activeProjectId } = useApp();
+  const { page, navigate, projects, activeProjectId } = useApp();
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
   const hasProject = activeProjectId != null;
@@ -31,14 +31,14 @@ export function WorkspaceHeader() {
         borderColor: "var(--color-bone-50)",
       }}
     >
-      {/* Sidebar toggle */}
+      {/* Back to home */}
       <button
-        onClick={toggleSidebar}
+        onClick={() => navigate({ type: "landing" })}
         className="w-8 h-8 flex items-center justify-center rounded-md text-[16px] transition-colors cursor-pointer"
         style={{ color: "var(--color-text-muted)" }}
-        aria-label="Toggle sidebar"
+        aria-label="Back to home"
       >
-        ☰
+        ←
       </button>
 
       {/* Breadcrumb */}
