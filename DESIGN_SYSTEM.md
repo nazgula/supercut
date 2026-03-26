@@ -19,8 +19,8 @@ The palette runs cool-dark to warm-light. Navy is for text, dark surfaces, and e
 | `--color-navy-700` | `#2F4858` | Primary dark — active tabs, links, accents on light |
 | `--color-navy-600` | `#3B5968` | Hover state for navy-700 |
 | `--color-slate-500` | `#4E6D78` | Secondary text, icons |
-| `--color-slate-400` | `#6A8A8F` | User chat bubble background |
-| `--color-slate-300` | `#8BA4A0` | Muted text, placeholders |
+| `--color-slate-400` | `#5A7A80` | User chat bubble background |
+| `--color-slate-300` | `#6B8A86` | Muted text, placeholders |
 | `--color-bone-200` | `#C8C4B3` | Strong border |
 | `--color-bone-100` | `#DBD8C8` | Mid border |
 | `--color-bone-50` | `#E6E3D2` | Default border |
