@@ -53,16 +53,12 @@ function AppShellInner() {
             gridTemplateColumns: "1fr repeat(10, 1fr) 1fr",
           }}
         >
-          {/* Left margin bg */}
-          <div style={{ background: "var(--color-bone-0)" }} />
-
-          {/* Back arrow + project name — cols 2–5 */}
+          {/* Back arrow + project name — cols 1–5 (starts at edge) */}
           <div
             className="flex items-center gap-2 pl-4"
             style={{
-              gridColumn: "2 / 6",
+              gridColumn: "1 / 6",
               background: "var(--color-bone-0)",
-              borderRight: "1px solid var(--color-bone-50)",
             }}
           >
             <button
