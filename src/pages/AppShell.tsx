@@ -45,10 +45,10 @@ function AppShellInner() {
       {/* ─── Unified header — full width, hidden on landing ─── */}
       {!isLanding && (
         <div
-          className="flex-shrink-0 border-b"
+          className="flex-shrink-0"
           style={{
             height: "48px",
-            borderColor: "var(--color-bone-50)",
+            background: "var(--color-bone-0)",
             display: "grid",
             gridTemplateColumns: "1fr repeat(10, 1fr) 1fr",
           }}
@@ -56,10 +56,7 @@ function AppShellInner() {
           {/* Back arrow + project name — cols 1–5 (starts at edge) */}
           <div
             className="flex items-center gap-2 pl-4"
-            style={{
-              gridColumn: "1 / 6",
-              background: "var(--color-bone-0)",
-            }}
+            style={{ gridColumn: "1 / 6" }}
           >
             <button
               onClick={() => navigate({ type: "landing" })}
@@ -82,10 +79,7 @@ function AppShellInner() {
           {/* Workspace tabs — cols 6–11 */}
           <div
             className="flex items-center pl-4"
-            style={{
-              gridColumn: "6 / 12",
-              background: "var(--color-bone-25)",
-            }}
+            style={{ gridColumn: "6 / 12" }}
           >
             {activeProjectId && TAB_LABELS.map((tab) => (
               <button
@@ -102,8 +96,8 @@ function AppShellInner() {
             ))}
           </div>
 
-          {/* Right margin bg */}
-          <div style={{ background: "var(--color-bone-25)" }} />
+          {/* Right margin */}
+          <div />
         </div>
       )}
 
