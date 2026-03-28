@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
 
 export interface Edit {
@@ -49,7 +48,7 @@ export async function getEdit(id: string): Promise<Edit | null> {
 
 export async function insertEdit(data: Pick<Edit, "projectId" | "title"> & Partial<Edit>): Promise<Edit> {
   const db = await getDb();
-  const id = uuidv4();
+  const id = crypto.randomUUID();
   const now = new Date().toISOString();
   db.run(
     `INSERT INTO edits (id, project_id, title, prompt, timeline, audio, render_path, timeline_modified, script, created_at, updated_at)
@@ -66,7 +65,7 @@ export async function updateEdit(id: string, fields: Partial<Omit<Edit, "id" | "
   const db = await getDb();
   const now = new Date().toISOString();
   const sets: string[] = ["updated_at = ?"];
-  const values: unknown[] = [now];
+  const values: (string | number | null | Uint8Array)[] = [now];
 
   if (fields.title !== undefined)           { sets.push("title = ?");             values.push(fields.title); }
   if (fields.prompt !== undefined)          { sets.push("prompt = ?");            values.push(fields.prompt); }

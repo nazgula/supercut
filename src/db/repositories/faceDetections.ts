@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
 import { parseJsonOrNull } from "../utils";
 
@@ -58,7 +57,7 @@ export async function listFaceDetections(clipId?: string, projectId?: string): P
 
 export async function insertFaceDetection(data: Omit<FaceDetection, "id" | "createdAt">): Promise<FaceDetection> {
   const db = await getDb();
-  const id = uuidv4();
+  const id = crypto.randomUUID();
   const now = new Date().toISOString();
   db.run(
     `INSERT INTO face_detections

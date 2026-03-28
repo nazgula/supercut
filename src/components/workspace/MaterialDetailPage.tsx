@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { rpcCall } from "../../api/rpc";
+import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 import type { Clip, Shot } from "./MaterialsPage";
 
@@ -23,7 +23,7 @@ export function MaterialDetailPage({
 
   useEffect(() => {
     setLoading(true);
-    rpcCall<{ clips: Clip[] }>("clips.list", { projectId })
+    cachedRpcCall<{ clips: Clip[] }>("clips.list", { projectId })
       .then((data) => {
         const found = data.clips.find((c) => c.id === clipId) ?? null;
         setClip(found);

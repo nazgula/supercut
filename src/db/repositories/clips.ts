@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
 
 export interface Clip {
@@ -53,7 +52,7 @@ export async function getClip(id: string): Promise<Clip | null> {
 
 export async function insertClip(data: Pick<Clip, "projectId" | "title" | "filename" | "mediaType"> & Partial<Clip>): Promise<Clip> {
   const db = await getDb();
-  const id = data.id ?? uuidv4();
+  const id = data.id ?? crypto.randomUUID();
   const now = new Date().toISOString();
   db.run(
     `INSERT INTO clips (id, project_id, title, description, filename, filepath, duration, status, media_type, source, error_message, created_at, updated_at)
@@ -72,7 +71,7 @@ export async function updateClip(id: string, fields: Partial<Omit<Clip, "id" | "
   const db = await getDb();
   const now = new Date().toISOString();
   const sets: string[] = ["updated_at = ?"];
-  const values: unknown[] = [now];
+  const values: (string | number | null | Uint8Array)[] = [now];
 
   if (fields.title !== undefined)        { sets.push("title = ?");         values.push(fields.title); }
   if (fields.description !== undefined)  { sets.push("description = ?");   values.push(fields.description); }

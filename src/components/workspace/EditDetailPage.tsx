@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { rpcCall, RpcError } from "../../api/rpc";
+import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 import type { Edit } from "./EditsPage";
 import type { Clip } from "./MaterialsPage";
@@ -47,9 +48,9 @@ export function EditDetailPage({
 
   const loadAll = useCallback(async () => {
     const [editsData, clipsData, rendersData] = await Promise.all([
-      rpcCall<{ edits: Edit[] }>("edits.list", { projectId }),
-      rpcCall<{ clips: Clip[] }>("clips.list", { projectId }),
-      rpcCall<{ renders: Render[] }>("edits.renders", { editId }),
+      cachedRpcCall<{ edits: Edit[] }>("edits.list", { projectId }),
+      cachedRpcCall<{ clips: Clip[] }>("clips.list", { projectId }),
+      cachedRpcCall<{ renders: Render[] }>("edits.renders", { editId }),
     ]);
     const found = editsData.edits.find((e) => e.id === editId) ?? null;
     setEdit(found);
@@ -68,7 +69,7 @@ export function EditDetailPage({
     if (hasActive && !renderPollRef.current) {
       renderPollRef.current = setInterval(async () => {
         try {
-          const data = await rpcCall<{ renders: Render[] }>("edits.renders", { editId });
+          const data = await cachedRpcCall<{ renders: Render[] }>("edits.renders", { editId });
           setRenders(data.renders);
           if (!data.renders.some((r) => r.status === "rendering")) {
             clearInterval(renderPollRef.current!);
@@ -117,7 +118,7 @@ export function EditDetailPage({
       // Start polling
       if (!renderPollRef.current) {
         renderPollRef.current = setInterval(async () => {
-          const data = await rpcCall<{ renders: Render[] }>("edits.renders", { editId });
+          const data = await cachedRpcCall<{ renders: Render[] }>("edits.renders", { editId });
           setRenders(data.renders);
           if (!data.renders.some((r) => r.status === "rendering")) {
             clearInterval(renderPollRef.current!);

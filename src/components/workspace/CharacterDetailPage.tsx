@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { rpcCall } from "../../api/rpc";
+import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 import type { FaceGroup } from "./CharactersPage";
 
@@ -35,8 +36,8 @@ export function CharacterDetailPage({
   useEffect(() => {
     setLoading(true);
     Promise.all([
-      rpcCall<{ groups: FaceGroup[] }>("faces.list", { projectId }),
-      rpcCall<{ clips: Appearance[] }>("faces.appearances", { groupId }),
+      cachedRpcCall<{ groups: FaceGroup[] }>("faces.list", { projectId }),
+      cachedRpcCall<{ clips: Appearance[] }>("faces.appearances", { groupId }),
     ])
       .then(([groupsData, appData]) => {
         const found = groupsData.groups.find((g) => g.id === groupId) ?? null;

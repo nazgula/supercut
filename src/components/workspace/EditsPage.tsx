@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { rpcCall, RpcError } from "../../api/rpc";
+import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 
 export interface Edit {
@@ -23,7 +24,7 @@ export function EditsPage({ projectId }: { projectId: string }) {
 
   async function load() {
     try {
-      const data = await rpcCall<{ edits: Edit[] }>("edits.list", { projectId });
+      const data = await cachedRpcCall<{ edits: Edit[] }>("edits.list", { projectId });
       setEdits(data.edits);
     } finally {
       setLoading(false);

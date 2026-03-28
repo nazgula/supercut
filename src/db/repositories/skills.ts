@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
 
 export interface Skill {
@@ -29,7 +28,7 @@ export async function listSkills(): Promise<Skill[]> {
 
 export async function insertSkill(title: string, content?: string): Promise<Skill> {
   const db = await getDb();
-  const id = uuidv4();
+  const id = crypto.randomUUID();
   const now = new Date().toISOString();
   db.run("INSERT INTO skills (id, title, content, created_at, updated_at) VALUES (?,?,?,?,?)",
     [id, title, content ?? null, now, now]);
@@ -41,7 +40,7 @@ export async function updateSkill(id: string, fields: Partial<Pick<Skill, "title
   const db = await getDb();
   const now = new Date().toISOString();
   const sets: string[] = ["updated_at = ?"];
-  const values: unknown[] = [now];
+  const values: (string | number | null | Uint8Array)[] = [now];
   if (fields.title !== undefined)   { sets.push("title = ?");   values.push(fields.title); }
   if (fields.content !== undefined) { sets.push("content = ?"); values.push(fields.content); }
   values.push(id);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { rpcCall } from "../../api/rpc";
+import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 
 export interface FaceGroup {
@@ -20,7 +21,7 @@ export function CharactersPage({ projectId }: { projectId: string }) {
 
   async function load() {
     try {
-      const data = await rpcCall<{ groups: FaceGroup[] }>("faces.list", { projectId });
+      const data = await cachedRpcCall<{ groups: FaceGroup[] }>("faces.list", { projectId });
       setGroups(data.groups);
     } finally {
       setLoading(false);

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
 
 export interface Render {
@@ -33,7 +32,7 @@ export async function listRenders(editId: string): Promise<Render[]> {
 
 export async function insertRender(editId: string): Promise<Render> {
   const db = await getDb();
-  const id = uuidv4();
+  const id = crypto.randomUUID();
   const now = new Date().toISOString();
   db.run(
     "INSERT INTO renders (id, edit_id, status, video_url, error_message, created_at, completed_at) VALUES (?,?,'rendering',NULL,NULL,?,NULL)",
@@ -46,7 +45,7 @@ export async function insertRender(editId: string): Promise<Render> {
 export async function updateRender(id: string, fields: Partial<Pick<Render, "status" | "videoUrl" | "errorMessage" | "completedAt">>): Promise<void> {
   const db = await getDb();
   const sets: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | null | Uint8Array)[] = [];
 
   if (fields.status !== undefined)       { sets.push("status = ?");        values.push(fields.status); }
   if (fields.videoUrl !== undefined)     { sets.push("video_url = ?");     values.push(fields.videoUrl); }

@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
 
 export interface Project {
@@ -41,7 +40,7 @@ export async function getProject(id: string): Promise<Project | null> {
 
 export async function insertProject(name: string): Promise<Project> {
   const db = await getDb();
-  const id = uuidv4();
+  const id = crypto.randomUUID();
   const now = new Date().toISOString();
   db.run(
     "INSERT INTO projects (id, name, script, post_processing, created_at, updated_at) VALUES (?,?,NULL,0,?,?)",
@@ -55,7 +54,7 @@ export async function updateProject(id: string, fields: Partial<Pick<Project, "n
   const db = await getDb();
   const now = new Date().toISOString();
   const sets: string[] = ["updated_at = ?"];
-  const values: unknown[] = [now];
+  const values: (string | number | null | Uint8Array)[] = [now];
 
   if (fields.name !== undefined)           { sets.push("name = ?");            values.push(fields.name); }
   if (fields.script !== undefined)         { sets.push("script = ?");          values.push(fields.script); }

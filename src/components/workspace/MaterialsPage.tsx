@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { rpcCall, getAuthToken, refreshAccessToken, API_BASE } from "../../api/rpc";
+import { getAuthToken, refreshAccessToken, API_BASE } from "../../api/rpc";
+import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 import { MaterialItem } from "../ui/MaterialItem";
 import type { MaterialItemData } from "../ui/MaterialItem";
@@ -76,7 +77,7 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
 
   const loadClips = useCallback(async () => {
     try {
-      const data = await rpcCall<{ clips: Clip[]; postProcessing: boolean }>(
+      const data = await cachedRpcCall<{ clips: Clip[]; postProcessing: boolean }>(
         "clips.list",
         { projectId }
       );

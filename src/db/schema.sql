@@ -114,3 +114,16 @@ CREATE TABLE IF NOT EXISTS edit_skills (
   skill_id TEXT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
   PRIMARY KEY (edit_id, skill_id)
 );
+
+-- ─── RPC Response Cache ──────────────────────────────────────
+-- Stores JSON-serialised RPC responses keyed by method + params hash.
+-- Used as a write-through cache: populated on every successful rpcCall,
+-- read when the backend is unreachable (offline fallback).
+
+CREATE TABLE IF NOT EXISTS rpc_cache (
+  cache_key   TEXT PRIMARY KEY,  -- "method:paramsHash"
+  method      TEXT NOT NULL,
+  params_json TEXT NOT NULL,     -- original params as JSON
+  data_json   TEXT NOT NULL,     -- full rpcCall result as JSON
+  cached_at   TEXT NOT NULL      -- ISO timestamp
+);

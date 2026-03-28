@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
 
 export interface Character {
@@ -41,7 +40,7 @@ export async function listCharacters(clipId?: string): Promise<Character[]> {
 
 export async function insertCharacter(data: Omit<Character, "id" | "createdAt">): Promise<Character> {
   const db = await getDb();
-  const id = uuidv4();
+  const id = crypto.randomUUID();
   const now = new Date().toISOString();
   db.run(
     `INSERT INTO characters (id, clip_id, name, nickname, description, appearance, first_appearance_time, frame_url, sheet_url, created_at)
@@ -56,7 +55,7 @@ export async function insertCharacter(data: Omit<Character, "id" | "createdAt">)
 export async function updateCharacter(id: string, fields: Partial<Pick<Character, "name" | "nickname" | "description" | "appearance" | "frameUrl" | "sheetUrl">>): Promise<void> {
   const db = await getDb();
   const sets: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | null | Uint8Array)[] = [];
 
   if (fields.name !== undefined)        { sets.push("name = ?");        values.push(fields.name); }
   if (fields.nickname !== undefined)    { sets.push("nickname = ?");    values.push(fields.nickname); }

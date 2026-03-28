@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "uuid";
 import { getDb, persistDb } from "../db";
 import { parseJsonOrNull } from "../utils";
 
@@ -42,7 +41,7 @@ export async function listShots(clipId: string): Promise<Shot[]> {
 
 export async function insertShot(data: Omit<Shot, "id" | "createdAt"> & { id?: string }): Promise<Shot> {
   const db = await getDb();
-  const id = data.id ?? uuidv4();
+  const id = data.id ?? crypto.randomUUID();
   const now = new Date().toISOString();
   db.run(
     "INSERT INTO shots (id, clip_id, title, description, start_time, end_time, transcript, created_at) VALUES (?,?,?,?,?,?,?,?)",
@@ -56,7 +55,7 @@ export async function insertShot(data: Omit<Shot, "id" | "createdAt"> & { id?: s
 export async function updateShot(id: string, fields: Partial<Pick<Shot, "title" | "description" | "transcript">>): Promise<void> {
   const db = await getDb();
   const sets: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | null | Uint8Array)[] = [];
 
   if (fields.title !== undefined)      { sets.push("title = ?");      values.push(fields.title); }
   if (fields.description !== undefined){ sets.push("description = ?"); values.push(fields.description); }

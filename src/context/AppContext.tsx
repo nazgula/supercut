@@ -6,7 +6,8 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { rpcCall, RpcError } from "../api/rpc";
+import { RpcError } from "../api/rpc";
+import { cachedRpcCall } from "../api/cachedRpc";
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refreshProjects = useCallback(async () => {
     try {
-      const data = await rpcCall<{ projects: Project[] }>("projects.list");
+      const data = await cachedRpcCall<{ projects: Project[] }>("projects.list");
       setProjects(data.projects);
     } catch (err) {
       if (err instanceof RpcError) console.error("Failed to load projects:", err.message);
@@ -84,7 +85,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const createProject = useCallback(async (name: string): Promise<Project> => {
-    const data = await rpcCall<{ project: Project }>("projects.create", { name });
+    const data = await cachedRpcCall<{ project: Project }>("projects.create", { name });
     await refreshProjects();
     return data.project;
   }, [refreshProjects]);
