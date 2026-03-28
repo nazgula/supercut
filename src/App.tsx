@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import AppShell from "./pages/AppShell";
 
@@ -18,7 +17,6 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={user ? <AppShell /> : <Navigate to="/auth" replace />} />
-      <Route path="/landing" element={<LandingPage />} />
       <Route
         path="/auth"
         element={user ? <Navigate to="/" replace /> : <AuthPage />}
