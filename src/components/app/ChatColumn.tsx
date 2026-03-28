@@ -4,10 +4,6 @@ import { API_BASE, getAuthToken } from "../../api/rpc";
 import { ChatBubble } from "../ui/ChatBubble";
 import type { Clip } from "../workspace/MaterialsPage";
 
-// ─── Constants ────────────────────────────────────────────────
-
-const CHAT_WIDTH = "40%";
-
 // ─── Types ────────────────────────────────────────────────────
 
 interface Message {
@@ -241,14 +237,7 @@ export function ChatColumn() {
   }
 
   return (
-    <div
-      className="flex flex-col flex-shrink-0 border-r"
-      style={{
-        width: CHAT_WIDTH,
-        background: "var(--color-bone-0)",
-        borderColor: "var(--color-bone-50)",
-      }}
-    >
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Log rail */}
       {logVisible && logLines.length > 0 && (
         <div

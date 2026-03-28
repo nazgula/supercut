@@ -1,7 +1,8 @@
 import { AppProvider, useApp, type WorkspacePage } from "../context/AppContext";
-import { HomeLanding } from "../components/app/HomeLanding";
-import { WorkspaceHeader } from "../components/app/WorkspaceHeader";
 import { ChatColumn } from "../components/app/ChatColumn";
+import { ChatGreeting } from "../components/app/ChatGreeting";
+import { WorkspaceHeader } from "../components/app/WorkspaceHeader";
+import { ProjectListPage } from "../components/workspace/ProjectListPage";
 import { MaterialsPage } from "../components/workspace/MaterialsPage";
 import { MaterialDetailPage } from "../components/workspace/MaterialDetailPage";
 import { CharactersPage } from "../components/workspace/CharactersPage";
@@ -18,26 +19,82 @@ export default function AppShell() {
 }
 
 function AppShellInner() {
-  const { page } = useApp();
+  const { page, navigate, projects, activeProjectId } = useApp();
+  const isLanding = page.type === "landing";
+  const activeProject = projects.find((p) => p.id === activeProjectId);
 
-  // Landing: full-screen home, no chat column, no sidebar
-  if (page.type === "landing") {
-    return <HomeLanding />;
-  }
-
-  // Project open: chat column LEFT, workspace RIGHT
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: "var(--color-bone-25)" }}>
-      {/* Chat column — left, no header */}
-      <ChatColumn />
+    <div
+      className="h-screen overflow-hidden"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr repeat(10, 1fr) 1fr",
+        background: "var(--color-bone-25)",
+      }}
+    >
+      {/* Left margin */}
+      <div style={{ background: "var(--color-bone-0)", gridColumn: "1 / 2" }} />
 
-      {/* Workspace column — right */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <WorkspaceHeader />
-        <div className="flex-1 overflow-y-auto p-5">
+      {/* Chat column — cols 2–5 */}
+      <div
+        className="flex flex-col overflow-hidden"
+        style={{
+          gridColumn: "2 / 6",
+          background: "var(--color-bone-0)",
+          borderRight: "1px solid var(--color-bone-50)",
+        }}
+      >
+        {/* Chat header — back arrow + project name (hidden on landing) */}
+        {!isLanding && (
+          <div
+            className="flex items-center gap-2 px-[10%] flex-shrink-0 border-b"
+            style={{
+              height: "48px",
+              borderColor: "var(--color-bone-50)",
+            }}
+          >
+            <button
+              onClick={() => navigate({ type: "landing" })}
+              className="w-8 h-8 flex items-center justify-center rounded-md text-[16px] transition-colors cursor-pointer"
+              style={{ color: "var(--color-text-muted)" }}
+              aria-label="Back to home"
+            >
+              ←
+            </button>
+            {activeProject && (
+              <span
+                className="text-[14px] font-medium truncate"
+                style={{ color: "var(--color-text)" }}
+              >
+                {activeProject.name}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Chat content */}
+        {isLanding ? <ChatGreeting /> : <ChatColumn />}
+      </div>
+
+      {/* Workspace column — cols 6–11 */}
+      <div
+        className="flex flex-col overflow-hidden"
+        style={{
+          gridColumn: "6 / 12",
+          background: "var(--color-bone-25)",
+        }}
+      >
+        {/* Workspace tabs — hidden on landing */}
+        {!isLanding && <WorkspaceHeader />}
+
+        {/* Workspace content */}
+        <div className={isLanding ? "flex-1 overflow-hidden" : "flex-1 overflow-y-auto p-5"}>
           <WorkspaceRouter page={page} />
         </div>
       </div>
+
+      {/* Right margin */}
+      <div style={{ background: "var(--color-bone-25)", gridColumn: "12 / 13" }} />
     </div>
   );
 }
@@ -45,7 +102,7 @@ function AppShellInner() {
 function WorkspaceRouter({ page }: { page: WorkspacePage }) {
   switch (page.type) {
     case "landing":
-      return null;
+      return <ProjectListPage />;
     case "materials":
       return <MaterialsPage projectId={page.projectId} />;
     case "material-detail":
