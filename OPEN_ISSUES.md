@@ -43,6 +43,11 @@ Currently no way to rename or update a project after creation. Needed for:
 **Add:** `projects.update` RPC method (accepts `name`, `description`, `duration`) + `update_project` MCP tool.
 **Schema:** Add `description TEXT` and `target_duration REAL` columns to `projects` table.
 
+### `edits.update` — add `title` param (HIGH)
+Currently `edits.update` only accepts `{ editId, prompt }` and clears the timeline. Frontend needs to rename edits without clearing the timeline.
+
+**Add:** optional `title` param to `edits.update` that updates the title without touching prompt/timeline.
+
 ### Render options in `edits.renderVideo` (HIGH)
 Currently hardcoded to 1920x1080/30fps/h264. Frontend needs to pass resolution/quality.
 

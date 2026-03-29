@@ -37,7 +37,7 @@ export function CharacterDetailPage({
     setLoading(true);
     Promise.all([
       cachedRpcCall<{ groups: FaceGroup[] }>("faces.list", { projectId }),
-      cachedRpcCall<{ clips: Appearance[] }>("faces.appearances", { groupId }),
+      cachedRpcCall<{ clips: Appearance[] }>("faces.appearances", { projectId, groupId }),
     ])
       .then(([groupsData, appData]) => {
         const found = groupsData.groups.find((g) => g.id === groupId) ?? null;

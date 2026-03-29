@@ -21,8 +21,8 @@ export function EditsPage({ projectId }: { projectId: string }) {
   const [showNewInput, setShowNewInput] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [creating, setCreating] = useState(false);
-  const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState("");
+  // NOTE: edits.update only accepts { editId, prompt } per API docs.
+  // Title rename requires a backend change. Inline rename disabled.
 
   async function loadEdits() {
     try {
@@ -129,38 +129,14 @@ export function EditsPage({ projectId }: { projectId: string }) {
                 borderColor: "var(--color-bone-50)",
               }}
             >
-              {/* Title — inline rename on double-click */}
-              {renamingId === edit.id ? (
-                <input
-                  autoFocus
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter" && renameValue.trim()) {
-                      await rpcCall("edits.update", { editId: edit.id, title: renameValue.trim() });
-                      setRenamingId(null);
-                      loadEdits();
-                    }
-                    if (e.key === "Escape") setRenamingId(null);
-                  }}
-                  onBlur={() => setRenamingId(null)}
-                  className="flex-1 text-[14px] font-medium outline-none bg-transparent"
-                  style={{ color: "var(--color-text)" }}
-                />
-              ) : (
-                <div
-                  className="flex-1 text-[14px] font-medium cursor-pointer"
-                  style={{ color: "var(--color-text)" }}
-                  onClick={() => navigate({ type: "edit-detail", projectId, editId: edit.id, tab: "edl" })}
-                  onDoubleClick={() => {
-                    setRenamingId(edit.id);
-                    setRenameValue(edit.title);
-                  }}
-                  title="Double-click to rename"
-                >
-                  {edit.title}
-                </div>
-              )}
+              {/* Title */}
+              <div
+                className="flex-1 text-[14px] font-medium cursor-pointer"
+                style={{ color: "var(--color-text)" }}
+                onClick={() => navigate({ type: "edit-detail", projectId, editId: edit.id, tab: "edl" })}
+              >
+                {edit.title}
+              </div>
 
               {/* Status + actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
