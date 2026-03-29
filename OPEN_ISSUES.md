@@ -20,33 +20,75 @@ solution for a native desktop distribution.
 
 ---
 
-## Backend Support Gaps
+## Backend Requests — Chat-Driven Workflow
 
-Issues discovered during v6.1 implementation. These affect what the frontend can show vs what the API provides.
+These are needed to support the chat architecture (spec 10) and agentic project management. Ordered by priority.
 
-### No SSE for clip processing progress
+### `projects.update` RPC + `update_project` MCP tool (HIGH)
+Currently no way to rename or update a project after creation. Needed for:
+- **Agentic project naming:** chat agent suggests a name based on user's intent, user confirms, agent renames via tool
+- **Project description:** editorial intent, brief text
+- **Future:** project settings (frame rate, aspect ratio, etc.)
+
+**Add:** `projects.update` RPC method (accepts `name`, `description`) + `update_project` MCP tool.
+
+### `projects.list` with summary counts (HIGH)
+Frontend needs clip count, character count, edit count, and processing status per project for the `ProjectStatusCard` — without making 3 separate API calls per project.
+
+**Add:** optional `include: ["counts"]` param to `projects.list` that returns `{ clipCount, characterCount, editCount, processingStatus }` per project.
+
+**Related previous issue:** "No clip count in `projects.list`" — this is the same gap.
+
+### Clip processing SSE (MEDIUM)
 `processClipInBackground` logs to `console.log` only. Frontend can only poll `clips.list` every 3s for status changes. LogRail is simulated from polling state diffs — no step-level visibility (transcribing, face detection, etc.).
+
+**Add:** SSE endpoint for clip processing progress (step name, percentage, errors in real-time).
+
 **Request spec:** `specs/request/log-rail-sse.md` — send to Gadi.
 
-### No clip count in `projects.list`
-`projects.list` returns only `{id, name, createdAt, updatedAt}`. Sidebar can't show "8 clips" per project without an extra `clips.list` call per project (too expensive on load).
-**Workaround:** Show relative date only in sidebar, no clip count.
+### Project status derivation (MEDIUM)
+Frontend needs to show whether a project is idle, ingesting, rendering, or assembling. Currently derived from polling `clips.list` for `status === "processing"`. No single source of truth.
 
-### No quality scores surfaced to client
-Gemini and WhisperX produce quality assessments server-side but these are not returned in `clips.list`. The wireframe shows "Good / Low light / Sync issue" flags per clip. Frontend currently has no data to populate these.
-**Workaround:** Show error flag on `clip.status === 'error'` only.
+**Options:**
+- Add `status` field to `projects` table (backend updates on state changes)
+- Or: add a `projects.status` RPC that returns derived status from child entities
+- Or: include `processingStatus` in `projects.list` with counts (see above)
+
+### `clips.update` / `shots.update` RPC + MCP tools (MEDIUM)
+No way to update clip or shot title/description via RPC. Chat agent and UI both need this for:
+- Renaming clips after user reviews them
+- Adding shot notes / descriptions
+- Correcting auto-generated titles
+
+**Add:** `clips.update` and `shots.update` RPC methods + `update_clip`, `update_shot` MCP tools.
+
+### Quality scores surfaced to client (LOW)
+Gemini and WhisperX produce quality assessments server-side but these are not returned in `clips.list`. The wireframe shows "Good / Low light / Sync issue" flags per clip. Chat agent could also report quality issues.
+
+**Add:** `qualityFlags` field to clip response in `clips.list`.
+
+### Chat system prompt per project (LOW — future)
+The `supercut.md` global context and `[project_name].md` per-project context described in CLAUDE.md aren't loaded or sent to the chat backend yet. When the backend chat agent gets a system prompt, it should include both the global editing persona and the per-project context (editorial intent, character notes, decisions).
+
+This is a backend concern — the frontend sends `projectId` and the backend assembles the full prompt.
+
+### Gemini availability check (LOW)
+`edits.render` throws error code 3004 if `GEMINI_API_KEY` not set. Frontend handles gracefully but cannot check upfront.
+
+**Add:** `system.status` RPC returning `{ gemini: boolean, insightface: boolean }`.
+
+---
+
+## Other Backend Gaps
 
 ### No `brand` media type in API
 API accepts video/image/audio. No brand asset type. Brand tab in Materials omitted.
 
 ### No suggestions endpoint
-Wireframe shows an "Suggestions" tab on edit detail (quality issues, alt takes). Backend has no endpoint for editorial suggestions. Tab omitted from edits view.
+Wireframe shows a "Suggestions" tab on edit detail (quality issues, alt takes). Backend has no endpoint for editorial suggestions. Chat agent could potentially provide this via conversation instead of a dedicated endpoint.
 
 ### Text file upload not supported
-`POST /upload` rejects non-video/image/audio MIME types. The wireframe script-verification flow (detect text file as script, parse into scenes) is not supported. Script is stored as plain text via `projects.updateScript` — manual paste only.
-
-### `edits.render` requires Gemini configured server-side
-`edits.render` throws error code 3004 if `GEMINI_API_KEY` not set. Frontend handles gracefully with user-facing message but has no way to know upfront if Gemini is available.
+`POST /upload` rejects non-video/image/audio MIME types. Script is stored as plain text via `projects.updateScript` — manual paste only.
 
 ### Face detection requires Python InsightFace venv on server
 `faces.detect` / `faces.detectAll` call a Python subprocess. If the venv isn't set up on the server, these calls fail silently or with an error. Frontend cannot detect this condition before calling.

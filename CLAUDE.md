@@ -26,9 +26,13 @@ Supercut is an AI-powered video editing desktop application. The primary interfa
 - See `open_issues.md` for unresolved auth/identity questions for desktop
 
 ### Chat system
-- **`supercut.md`** (project root) — the chat editor's global context: personality, editing domain knowledge, system capabilities. Shared across all video projects. Loaded by the app at startup.
-- **`[project_name].md`** (created per video project) — per-project evolving context. Created when a new project starts. Updated as the project develops. Captures editorial intent, key decisions, character names, shot notes, anything the AI needs to stay oriented.
-- **Storage:** Both files are stored as named files on the filesystem. In Electron, these live under `app.getPath('userData')`. In development, they live in a `data/` directory at the project root. This is intentional — plain markdown files are readable, editable by the user in any editor, and trivially backed up.
+- **Architecture:** `src/chat/useChatStream.ts` (hook) + `src/components/app/ChatColumn.tsx` (renderer). Hook owns all streaming logic; component is a thin UI layer.
+- **Backend:** `POST /chat/stream` (SSE) — stateless. Frontend sends full conversation history (sliding window: last 20 messages). Backend re-reads project state via MCP tools each turn.
+- **Messages:** Session-scoped, stored in a `Map<projectId, Message[]>` inside the hook. Survive navigation within a session. NOT persisted to disk — closing the app clears all conversations. The project's data (clips, edits, characters) is the durable context.
+- **Events:** `text` (streaming tokens), `tool_start`/`tool_done` (MCP tool execution), `navigate` (workspace routing), `question` (clarifying options), `error`, `done`.
+- **Side effects:** Write tools (`create_edit`, `delete_clip`, etc.) trigger automatic data refresh via `cachedRpcCall`.
+- **Context files:** `supercut.md` (global persona), `[project_name].md` (per-project context) — loaded by backend, not frontend.
+- **Integration spec:** `docs/backend-chat-integration.md` — full contract.
 
 ---
 
@@ -111,9 +115,17 @@ Always self-review before committing:
 |---|---|
 | `src/index.css` | V6 design system — all theme tokens defined here |
 | `src/api/rpc.ts` | JSON-RPC client, token refresh, `RpcError` |
+| `src/api/cachedRpc.ts` | Write-through cache layer — offline fallback via SQLite |
+| `src/chat/types.ts` | Chat types, SSE parser, sliding window, project name extractor |
+| `src/chat/useChatStream.ts` | Chat hook — SSE streaming, per-project messages, tool effects |
+| `src/components/app/ChatColumn.tsx` | Chat UI — always mounted, handles landing/project/messages states |
+| `src/components/app/ProjectStatusCard.tsx` | Data-driven project summary (clips, characters, edits, status) |
+| `src/pages/AppShell.tsx` | Root layout — 12-col grid, unified header, workspace router |
+| `src/context/AppContext.tsx` | App state — projects, navigation, pending message |
 | `src/context/AuthContext.tsx` | Auth state, JWT lifecycle |
 | `src/db/db.ts` | sql.js init, persistence (chunked btoa) |
 | `src/db/repositories/` | One file per entity — all DB access goes here |
-| `supercut.md` | Chat editor global context — loaded at app startup |
-| `open_issues.md` | Unresolved issues and deferred decisions |
+| `docs/backend-chat-integration.md` | Backend chat contract — endpoints, events, MCP tools |
+| `DESIGN_SYSTEM.md` | Color, type, layout, component guidelines |
+| `OPEN_ISSUES.md` | Unresolved issues, backend gaps, deferred decisions |
 | `specs/` | Implementation specs (todo → executing → done) |

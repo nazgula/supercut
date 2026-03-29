@@ -1,6 +1,5 @@
 import { AppProvider, useApp, type WorkspacePage } from "../context/AppContext";
 import { ChatColumn } from "../components/app/ChatColumn";
-import { ChatGreeting } from "../components/app/ChatGreeting";
 import { ProjectListPage } from "../components/workspace/ProjectListPage";
 import { MaterialsPage } from "../components/workspace/MaterialsPage";
 import { MaterialDetailPage } from "../components/workspace/MaterialDetailPage";
@@ -121,7 +120,7 @@ function AppShellInner() {
             borderRight: "1px solid var(--color-bone-50)",
           }}
         >
-          {isLanding ? <ChatGreeting /> : <ChatColumn />}
+          <ChatColumn />
         </div>
 
         {/* Workspace column — cols 6–11 */}
