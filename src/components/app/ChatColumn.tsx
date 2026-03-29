@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useApp } from "../../context/AppContext";
-import { API_BASE, getAuthToken } from "../../api/rpc";
+import { API_BASE, getAuthToken, refreshAccessToken } from "../../api/rpc";
+import { cachedRpcCall } from "../../api/cachedRpc";
 import { ChatBubble } from "../ui/ChatBubble";
 import type { Clip } from "../workspace/MaterialsPage";
 
@@ -13,7 +14,11 @@ interface Message {
   streaming?: boolean;
 }
 
-// Log line derived from clip polling state
+interface Question {
+  text: string;
+  options: string[];
+}
+
 interface LogLine {
   clipId: string;
   text: string;
@@ -23,10 +28,12 @@ interface LogLine {
 // ─── ChatColumn ───────────────────────────────────────────────
 
 export function ChatColumn() {
-  const { page, activeProjectId, navigate, pendingMessage, setPendingMessage } = useApp();
+  const { page, activeProjectId, navigate, pendingMessage, setPendingMessage, refreshProjects } = useApp();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
+  const [toolActivity, setToolActivity] = useState<string | null>(null);
+  const [question, setQuestion] = useState<Question | null>(null);
   const [logLines, setLogLines] = useState<LogLine[]>([]);
   const [logVisible, setLogVisible] = useState(false);
   const [clips, setClips] = useState<Clip[]>([]);
@@ -34,11 +41,13 @@ export function ChatColumn() {
   const prevClipsRef = useRef<Clip[]>([]);
   const logCollapseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSentRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const hasProject = activeProjectId != null;
   const hasMessages = messages.length > 0;
 
-  // Update log lines when clips change (polling-derived)
+  // ─── Log rail: clip processing updates ─────────────────────
+
   useEffect(() => {
     if (!hasProject) return;
     const prev = prevClipsRef.current;
@@ -51,11 +60,7 @@ export function ChatColumn() {
       } else if (prevClip?.status === "processing" && clip.status === "ready") {
         newLines.push({ clipId: clip.id, text: `✓ ${clip.title || clip.filename}`, state: "done" });
       } else if (prevClip?.status === "processing" && clip.status === "error") {
-        newLines.push({
-          clipId: clip.id,
-          text: `✗ ${clip.filename} — ${clip.errorMessage ?? "error"}`,
-          state: "error",
-        });
+        newLines.push({ clipId: clip.id, text: `✗ ${clip.filename} — ${clip.errorMessage ?? "error"}`, state: "error" });
       }
     }
 
@@ -67,7 +72,6 @@ export function ChatColumn() {
     const anyProcessing = clips.some((c) => c.status === "processing");
     if (!anyProcessing && clips.length > 0 && prev.some((c) => c.status === "processing")) {
       setLogLines((prev) => [...prev, { clipId: "done", text: "✓ All files processed", state: "done" }]);
-      // Auto-collapse after 4s
       if (logCollapseTimerRef.current) clearTimeout(logCollapseTimerRef.current);
       logCollapseTimerRef.current = setTimeout(() => setLogVisible(false), 4000);
     }
@@ -75,70 +79,86 @@ export function ChatColumn() {
     prevClipsRef.current = clips;
   }, [clips, hasProject]);
 
-  // Expose clip setter for MaterialsPage polling (via context or direct prop — here via window event)
   useEffect(() => {
-    function onClipsUpdate(e: CustomEvent<Clip[]>) {
-      setClips(e.detail);
-    }
+    function onClipsUpdate(e: CustomEvent<Clip[]>) { setClips(e.detail); }
     window.addEventListener("supercut:clips-update", onClipsUpdate as EventListener);
     return () => window.removeEventListener("supercut:clips-update", onClipsUpdate as EventListener);
   }, []);
 
-  // Scroll to bottom on new messages
+  // ─── Scroll to bottom ─────────────────────────────────────
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Auto-send pending message when a project becomes active
+  // ─── Pending message (from landing page) ──────────────────
+
   useEffect(() => {
     if (!activeProjectId || !pendingMessage || pendingSentRef.current) return;
     pendingSentRef.current = true;
     const msg = pendingMessage;
     setPendingMessage(null);
-    // Defer so component is fully mounted before streaming starts
     setTimeout(() => {
       pendingSentRef.current = false;
-      handleSendText(msg);
+      sendMessage(msg);
     }, 0);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProjectId, pendingMessage]);
 
+  // ─── Build uiContext per backend contract ─────────────────
+
   const buildUiContext = useCallback(() => {
     const p = page;
-    return {
-      page: p.type,
-      ...(p.type !== "landing" ? { projectId: p.projectId } : {}),
-      ...("clipId" in p ? { clipId: p.clipId } : {}),
-      ...("groupId" in p ? { groupId: p.groupId } : {}),
-      ...("editId" in p ? { editId: p.editId, editTab: p.tab } : {}),
-    };
+    const ctx: Record<string, unknown> = {};
+
+    switch (p.type) {
+      case "materials":
+      case "material-detail":
+        ctx.activeTab = "clips";
+        if (p.type === "material-detail") ctx.expandedClipId = p.clipId;
+        break;
+      case "characters":
+      case "character-detail":
+        ctx.activeTab = "characters";
+        if (p.type === "character-detail") ctx.selectedCharacterId = p.groupId;
+        break;
+      case "edits":
+      case "edit-detail":
+        ctx.activeTab = "edits";
+        if (p.type === "edit-detail") {
+          ctx.selectedEditId = p.editId;
+          ctx.selectedEditTab = p.tab === "renders" ? "renders" : "spec";
+        }
+        break;
+      default:
+        ctx.activeTab = "clips";
+    }
+
+    return ctx;
   }, [page]);
 
-  async function handleSendText(overrideText?: string) {
-    const text = (overrideText ?? input).trim();
-    if (!text || streaming || !activeProjectId) return;
-    return _sendMessage(text);
-  }
+  // ─── Send message ─────────────────────────────────────────
 
-  async function handleSend() {
-    return handleSendText();
-  }
+  async function sendMessage(text: string) {
+    if (!text.trim() || streaming || !activeProjectId) return;
 
-  async function _sendMessage(text: string) {
-    if (!activeProjectId) return;
-
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text };
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: text.trim() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setStreaming(true);
+    setToolActivity(null);
+    setQuestion(null);
 
     const assistantId = crypto.randomUUID();
-    const assistantMsg: Message = { id: assistantId, role: "assistant", content: "", streaming: true };
-    setMessages((prev) => [...prev, assistantMsg]);
+    setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "", streaming: true }]);
+
+    const abort = new AbortController();
+    abortRef.current = abort;
 
     try {
-      const token = getAuthToken();
-      const res = await fetch(`${API_BASE}/chat/stream`, {
+      let token = getAuthToken();
+
+      let res = await fetch(`${API_BASE}/chat/stream`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -149,7 +169,29 @@ export function ChatColumn() {
           messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
           uiContext: buildUiContext(),
         }),
+        signal: abort.signal,
       });
+
+      // Retry on 401
+      if (res.status === 401) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          token = getAuthToken();
+          res = await fetch(`${API_BASE}/chat/stream`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              projectId: activeProjectId,
+              messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
+              uiContext: buildUiContext(),
+            }),
+            signal: abort.signal,
+          });
+        }
+      }
 
       if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
@@ -171,25 +213,16 @@ export function ChatColumn() {
           if (!raw) continue;
           try {
             const event = JSON.parse(raw) as Record<string, unknown>;
-            if (event.type === "text") {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantId
-                    ? { ...m, content: m.content + (event.text as string) }
-                    : m
-                )
-              );
-            } else if (event.type === "navigate") {
-              handleNavigateEvent(event);
-            }
+            handleSSEEvent(event, assistantId);
           } catch { /* ignore malformed SSE */ }
         }
       }
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantId
-            ? { ...m, content: "Sorry, something went wrong. Please try again.", streaming: false }
+            ? { ...m, content: m.content || "Sorry, something went wrong. Please try again.", streaming: false }
             : m
         )
       );
@@ -198,8 +231,95 @@ export function ChatColumn() {
         prev.map((m) => (m.id === assistantId ? { ...m, streaming: false } : m))
       );
       setStreaming(false);
+      setToolActivity(null);
+      abortRef.current = null;
     }
   }
+
+  // ─── SSE event router ─────────────────────────────────────
+
+  function handleSSEEvent(event: Record<string, unknown>, assistantId: string) {
+    switch (event.type) {
+      case "text":
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: m.content + (event.text as string) }
+              : m
+          )
+        );
+        break;
+
+      case "tool_start":
+        setToolActivity(event.name as string);
+        break;
+
+      case "tool_done":
+        setToolActivity(null);
+        handleToolDone(event.name as string);
+        break;
+
+      case "navigate":
+        handleNavigateEvent(event);
+        break;
+
+      case "question":
+        setQuestion({
+          text: event.question as string,
+          options: event.options as string[],
+        });
+        break;
+
+      case "error":
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: m.content + `\n\n⚠ ${event.message as string}` }
+              : m
+          )
+        );
+        break;
+
+      case "done":
+        // Stream complete — finalization handled in finally block
+        break;
+    }
+  }
+
+  // ─── Write tool side effects ──────────────────────────────
+
+  function handleToolDone(toolName: string) {
+    if (!activeProjectId) return;
+
+    const refreshClips = () => {
+      cachedRpcCall("clips.list", { projectId: activeProjectId }).catch(() => {});
+    };
+    const refreshEdits = () => {
+      cachedRpcCall("edits.list", { projectId: activeProjectId }).catch(() => {});
+    };
+    const refreshCharacters = () => {
+      cachedRpcCall("faces.list", { projectId: activeProjectId }).catch(() => {});
+    };
+
+    const actions: Record<string, () => void> = {
+      create_edit: refreshEdits,
+      delete_edit: refreshEdits,
+      delete_clip: refreshClips,
+      delete_character: refreshCharacters,
+      rename_character: refreshCharacters,
+      render_edit: refreshEdits,
+      delete_renders: refreshEdits,
+      reprocess_clips: refreshClips,
+      detect_faces: refreshCharacters,
+      recluster_faces: refreshCharacters,
+    };
+
+    actions[toolName]?.();
+    // Always refresh projects in case name/metadata changed
+    refreshProjects();
+  }
+
+  // ─── Navigation events ────────────────────────────────────
 
   function handleNavigateEvent(event: Record<string, unknown>) {
     const view = event.view as string;
@@ -212,8 +332,14 @@ export function ChatColumn() {
       case "materials":
         navigate({ type: "materials", projectId: activeProjectId });
         break;
+      case "clip":
+        if (id) navigate({ type: "material-detail", projectId: activeProjectId, clipId: id });
+        break;
       case "characters":
         navigate({ type: "characters", projectId: activeProjectId });
+        break;
+      case "character":
+        if (id) navigate({ type: "character-detail", projectId: activeProjectId, groupId: id });
         break;
       case "edits":
         navigate({ type: "edits", projectId: activeProjectId });
@@ -224,17 +350,32 @@ export function ChatColumn() {
             type: "edit-detail",
             projectId: activeProjectId,
             editId: id,
-            tab: (tab === "renders" ? "renders" : "edl"),
+            tab: tab === "renders" ? "renders" : "edl",
           });
-        break;
-      case "character":
-        if (id) navigate({ type: "character-detail", projectId: activeProjectId, groupId: id });
-        break;
-      case "clip":
-        if (id) navigate({ type: "material-detail", projectId: activeProjectId, clipId: id });
         break;
     }
   }
+
+  // ─── Question answer ──────────────────────────────────────
+
+  function answerQuestion(option: string) {
+    setQuestion(null);
+    sendMessage(option);
+  }
+
+  // ─── Cancel stream ────────────────────────────────────────
+
+  function cancelStream() {
+    abortRef.current?.abort();
+  }
+
+  // ─── Handlers ─────────────────────────────────────────────
+
+  function handleSend() {
+    sendMessage(input);
+  }
+
+  // ─── Render ───────────────────────────────────────────────
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -269,7 +410,7 @@ export function ChatColumn() {
           ))}
           <button
             onClick={() => setLogVisible(false)}
-            className="text-[9px] mt-1 cursor-pointer"
+            className="text-[11px] mt-1 cursor-pointer"
             style={{ color: "var(--color-text-muted)" }}
           >
             Collapse
@@ -277,7 +418,23 @@ export function ChatColumn() {
         </div>
       )}
 
-      {/* Messages or landing */}
+      {/* Tool activity indicator */}
+      {toolActivity && (
+        <div
+          className="flex items-center gap-2 px-[10%] py-2 border-b flex-shrink-0"
+          style={{
+            borderColor: "var(--color-bone-50)",
+            background: "var(--color-bone-25)",
+          }}
+        >
+          <span className="inline-block w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin" style={{ color: "var(--color-navy-700)" }} />
+          <span className="text-[12px]" style={{ color: "var(--color-text-secondary)" }}>
+            {toolActivity.replace(/_/g, " ")}…
+          </span>
+        </div>
+      )}
+
+      {/* Messages or empty state */}
       {!hasProject || !hasMessages ? (
         <ChatLanding
           hasProject={hasProject}
@@ -290,19 +447,47 @@ export function ChatColumn() {
         <>
           <div className="flex-1 overflow-y-auto px-[10%] py-4 flex flex-col gap-3 justify-end">
             {messages.map((msg) => (
-              <ChatBubble key={msg.id} role={msg.role === "user" ? "user" : "ai"} label={msg.role === "user" ? "You" : "Editor Assistant"}>
+              <ChatBubble key={msg.id} role={msg.role === "user" ? "user" : "ai"} label={msg.role === "user" ? "You" : "Editor"}>
                 {msg.content || (msg.streaming ? "…" : "")}
               </ChatBubble>
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <ChatInputBar
-            input={input}
-            onInputChange={setInput}
-            onSend={handleSend}
-            streaming={streaming}
-            disabled={!hasProject}
-          />
+
+          {/* Question buttons */}
+          {question && (
+            <div className="flex flex-wrap gap-2 px-[10%] py-3 border-t flex-shrink-0" style={{ borderColor: "var(--color-bone-50)" }}>
+              <div className="w-full text-[12px] mb-1" style={{ color: "var(--color-text-secondary)" }}>
+                {question.text}
+              </div>
+              {question.options.map((opt) => (
+                <button
+                  key={opt}
+                  onClick={() => answerQuestion(opt)}
+                  className="px-3 py-1.5 rounded-lg text-[12px] font-medium cursor-pointer border transition-colors"
+                  style={{
+                    borderColor: "var(--color-bone-50)",
+                    color: "var(--color-navy-700)",
+                    background: "white",
+                  }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input bar */}
+          {!question && (
+            <ChatInputBar
+              input={input}
+              onInputChange={setInput}
+              onSend={handleSend}
+              onCancel={cancelStream}
+              streaming={streaming}
+              disabled={!hasProject}
+            />
+          )}
         </>
       )}
     </div>
@@ -330,7 +515,7 @@ function ChatLanding({
         <h2 className="text-[18px] font-medium mb-2" style={{ color: "var(--color-text)" }}>
           {hasProject ? "What are we working on?" : "What are we editing today?"}
         </h2>
-        <p className="text-[12px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
+        <p className="text-[14px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
           {hasProject
             ? "Ask about your footage, characters, or how to structure this edit."
             : "Select a project from the sidebar, or start a new one. I'll help with everything from ingest to final cut."}
@@ -345,7 +530,7 @@ function ChatLanding({
             onKeyDown={(e) => { if (e.key === "Enter") onSend(); }}
             placeholder="Describe your edit…"
             disabled={streaming}
-            className="flex-1 px-3 py-2.5 rounded-lg text-[12px] outline-none border"
+            className="flex-1 px-3 py-2.5 rounded-lg text-[14px] outline-none border"
             style={{
               borderColor: "var(--color-bone-50)",
               background: "white",
@@ -372,12 +557,14 @@ function ChatInputBar({
   input,
   onInputChange,
   onSend,
+  onCancel,
   streaming,
   disabled,
 }: {
   input: string;
   onInputChange: (v: string) => void;
   onSend: () => void;
+  onCancel: () => void;
   streaming: boolean;
   disabled: boolean;
 }) {
@@ -389,32 +576,35 @@ function ChatInputBar({
       <input
         value={input}
         onChange={(e) => onInputChange(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") onSend(); }}
+        onKeyDown={(e) => { if (e.key === "Enter" && !streaming) onSend(); }}
         placeholder="Ask about your footage…"
         disabled={disabled || streaming}
-        className="flex-1 px-3 py-2.5 rounded-lg text-[12px] outline-none border"
+        className="flex-1 px-3 py-2.5 rounded-lg text-[14px] outline-none border"
         style={{
           borderColor: "var(--color-bone-50)",
           background: "white",
           color: "var(--color-text)",
         }}
       />
-      <button
-        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer text-[14px]"
-        style={{ background: "transparent", color: "var(--color-text-muted)", border: "1px solid var(--color-bone-50)" }}
-        title="Voice input (coming soon)"
-        disabled
-      >
-        🎤
-      </button>
-      <button
-        onClick={onSend}
-        disabled={!input.trim() || streaming || disabled}
-        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer"
-        style={{ background: "var(--color-accent)", color: "white" }}
-      >
-        ↑
-      </button>
+      {streaming ? (
+        <button
+          onClick={onCancel}
+          className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer text-[14px]"
+          style={{ background: "var(--color-error)", color: "white" }}
+          title="Stop"
+        >
+          ■
+        </button>
+      ) : (
+        <button
+          onClick={onSend}
+          disabled={!input.trim() || disabled}
+          className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer"
+          style={{ background: "var(--color-accent)", color: "white" }}
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 }
