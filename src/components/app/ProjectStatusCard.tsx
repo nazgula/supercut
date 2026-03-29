@@ -60,46 +60,39 @@ export function ProjectStatusCard({ projectId }: ProjectStatusCardProps) {
     : { label: "Loading…", color: "var(--color-text-muted)" };
 
   return (
-    <div
-      className="rounded-[10px] border overflow-hidden"
-      style={{ borderColor: "var(--color-bone-50)", background: "var(--color-bone-25)" }}
-    >
+    <div>
       {/* Welcome heading */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="text-[16px] font-medium mb-1" style={{ color: "var(--color-text)" }}>
-          Welcome back{project ? ` to ${project.name}` : ""}
-        </div>
+      <div className="font-medium mb-2" style={{ color: "var(--color-text)" }}>
+        Welcome back{project ? ` to ${project.name}` : ""}
       </div>
 
       {/* Status + counts */}
-      <div className="px-4 pb-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-          <span className="text-[14px]" style={{ color: "var(--color-text-secondary)" }}>
-            {label}
-          </span>
-        </div>
-        {summary && (
-          <div
-            className="flex flex-wrap gap-x-5 gap-y-1 text-[12px]"
-            style={{ color: "var(--color-text-muted)" }}
-          >
-            <span>{summary.clipCount} clip{summary.clipCount !== 1 ? "s" : ""}</span>
-            <span>{summary.characterCount} character{summary.characterCount !== 1 ? "s" : ""}</span>
-            <span>{summary.editCount} edit{summary.editCount !== 1 ? "s" : ""}</span>
-            {summary.clipsByStatus.processing > 0 && (
-              <span style={{ color: "var(--color-warning)" }}>
-                {summary.clipsByStatus.processing} processing
-              </span>
-            )}
-            {summary.clipsByStatus.error > 0 && (
-              <span style={{ color: "var(--color-error)" }}>
-                {summary.clipsByStatus.error} failed
-              </span>
-            )}
-          </div>
-        )}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+        <span className="text-[14px]" style={{ color: "var(--color-text-secondary)" }}>
+          {label}
+        </span>
       </div>
+      {summary && (
+        <div
+          className="flex flex-wrap gap-x-5 gap-y-1 text-[12px]"
+          style={{ color: "var(--color-text-muted)" }}
+        >
+          <span>{summary.clipCount} clip{summary.clipCount !== 1 ? "s" : ""}</span>
+          <span>{summary.characterCount} character{summary.characterCount !== 1 ? "s" : ""}</span>
+          <span>{summary.editCount} edit{summary.editCount !== 1 ? "s" : ""}</span>
+          {summary.clipsByStatus.processing > 0 && (
+            <span style={{ color: "var(--color-warning)" }}>
+              {summary.clipsByStatus.processing} processing
+            </span>
+          )}
+          {summary.clipsByStatus.error > 0 && (
+            <span style={{ color: "var(--color-error)" }}>
+              {summary.clipsByStatus.error} failed
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

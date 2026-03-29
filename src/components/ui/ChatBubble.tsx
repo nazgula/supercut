@@ -35,7 +35,7 @@ export function ChatBubble({
           {label}
         </div>
       )}
-      <p className="text-[16px] leading-relaxed">{children}</p>
+      <div className="text-[16px] leading-relaxed">{children}</div>
     </div>
   );
 }

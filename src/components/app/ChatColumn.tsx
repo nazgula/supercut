@@ -193,40 +193,8 @@ export function ChatColumn() {
         </div>
       )}
 
-      {/* ─── Project state: no messages yet (welcome + status) ─── */}
-      {!isLanding && hasProject && !hasMessages && (
-        <div className="flex-1 relative">
-          {/* Status card — vertically centered in the full column */}
-          <div className="absolute inset-0 flex items-center justify-center px-[10%]">
-            <ProjectStatusCard projectId={activeProjectId!} />
-          </div>
-
-          {/* Input pinned at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-[10%] py-3">
-            <input
-              autoFocus
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleChatSend(); }}
-              placeholder="Ask about your footage…"
-              disabled={chat.isStreaming}
-              className="flex-1 px-3 py-2.5 rounded-lg text-[14px] outline-none border"
-              style={{ borderColor: "var(--color-bone-50)", background: "white", color: "var(--color-text)" }}
-            />
-            <button
-              onClick={handleChatSend}
-              disabled={!chatInput.trim() || chat.isStreaming}
-              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer"
-              style={{ background: "var(--color-accent)", color: "white" }}
-            >
-              ↑
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Project state: has messages (scroll + input at bottom) ─── */}
-      {!isLanding && hasProject && hasMessages && (
+      {/* ─── Project state: chat flow (status card + messages + input) ─── */}
+      {!isLanding && hasProject && (
         <>
           {/* Log rail */}
           {logVisible && logLines.length > 0 && (
@@ -267,9 +235,17 @@ export function ChatColumn() {
             </div>
           )}
 
-          {/* Messages */}
+          {/* Messages — status card is the first bubble in the flow */}
           <div className="flex-1 overflow-y-auto px-[10%] py-4 flex flex-col gap-3 justify-end">
-            <ProjectStatusCard projectId={activeProjectId!} />
+            {/* Status card — same alignment as AI bubbles, no container styling */}
+            <div className="max-w-[85%] mr-auto">
+              <div className="text-[12px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--color-text-muted)" }}>
+                Editor
+              </div>
+              <ProjectStatusCard projectId={activeProjectId!} />
+            </div>
+
+            {/* Conversation messages */}
             {chat.messages.map((msg) => (
               <ChatBubble key={msg.id} role={msg.role === "user" ? "user" : "ai"} label={msg.role === "user" ? "You" : "Editor"}>
                 {msg.content || (msg.streaming ? "…" : "")}
@@ -304,6 +280,7 @@ export function ChatColumn() {
               style={{ borderColor: "var(--color-bone-50)", background: "var(--color-bone-0)" }}
             >
               <input
+                autoFocus={!hasMessages}
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !chat.isStreaming) handleChatSend(); }}
