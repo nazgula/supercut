@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { rpcCall } from "../../api/rpc";
+import { rpcCall, authUrl } from "../../api/rpc";
 import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 import type { FaceGroup } from "./CharactersPage";
@@ -96,7 +96,7 @@ export function CharacterDetailPage({
           style={{ background: "var(--color-bone-25)" }}
         >
           {group.imageUrl ? (
-            <img src={group.imageUrl} alt={displayName} className="w-full h-full object-cover" />
+            <img src={authUrl(group.imageUrl)} alt={displayName} className="w-full h-full object-cover" />
           ) : (
             <span className="text-4xl opacity-30">👤</span>
           )}

@@ -18,6 +18,12 @@ export function getAuthToken(): string | null {
   return authToken;
 }
 
+/** Append JWT as query param for media URLs (video/audio/img src can't send headers) */
+export function authUrl(url: string): string {
+  const fullUrl = url.startsWith("http") ? url : `${API_BASE}${url}`;
+  return authToken ? `${fullUrl}?token=${authToken}` : fullUrl;
+}
+
 export async function rpcCall<T = unknown>(
   method: string,
   params: Record<string, unknown> = {}

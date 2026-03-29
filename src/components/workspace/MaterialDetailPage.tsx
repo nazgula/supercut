@@ -1,32 +1,8 @@
 import { useState, useEffect } from "react";
 import { cachedRpcCall } from "../../api/cachedRpc";
-import { API_BASE, getAuthToken } from "../../api/rpc";
+import { authUrl } from "../../api/rpc";
 import { useApp } from "../../context/AppContext";
 import type { Clip, Shot } from "./MaterialsPage";
-
-/** Fetch a presigned URL for a media file by following the auth redirect */
-async function getPresignedMediaUrl(mediaUrl: string): Promise<string | null> {
-  if (!mediaUrl) return null;
-  try {
-    const token = getAuthToken();
-    const res = await fetch(`${API_BASE}${mediaUrl}`, {
-      method: "GET",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      redirect: "manual",
-    });
-    // Backend returns 302 with Location header pointing to presigned S3 URL
-    if (res.status === 302 || res.status === 301) {
-      return res.headers.get("Location");
-    }
-    // If redirect was followed automatically (browser), the final URL is the presigned one
-    if (res.ok && res.url !== `${API_BASE}${mediaUrl}`) {
-      return res.url;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
 
 function formatTime(secs: number): string {
   const m = Math.floor(secs / 60);
@@ -43,21 +19,15 @@ export function MaterialDetailPage({
 }) {
   const { navigate } = useApp();
   const [clip, setClip] = useState<Clip | null>(null);
-  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"shots" | "transcript">("shots");
 
   useEffect(() => {
     let cancelled = false;
     cachedRpcCall<{ clips: Clip[] }>("clips.list", { projectId })
-      .then(async (data) => {
+      .then((data) => {
         if (cancelled) return;
-        const found = data.clips.find((c) => c.id === clipId) ?? null;
-        setClip(found);
-        if (found?.mediaUrl) {
-          const url = await getPresignedMediaUrl(found.mediaUrl);
-          if (!cancelled) setResolvedUrl(url);
-        }
+        setClip(data.clips.find((c) => c.id === clipId) ?? null);
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -107,20 +77,20 @@ export function MaterialDetailPage({
       </div>
 
       {/* Media player */}
-      {resolvedUrl && clip.mediaType === "video" ? (
+      {clip.mediaUrl && clip.mediaType === "video" ? (
         <video
-          src={resolvedUrl}
+          src={authUrl(clip.mediaUrl)}
           controls
           className="w-full"
           style={{ background: "#000", maxHeight: "400px" }}
         />
-      ) : resolvedUrl && clip.mediaType === "audio" ? (
+      ) : clip.mediaUrl && clip.mediaType === "audio" ? (
         <div className="px-4 py-6" style={{ background: "var(--color-navy-900)" }}>
-          <audio src={resolvedUrl} controls className="w-full" />
+          <audio src={authUrl(clip.mediaUrl)} controls className="w-full" />
         </div>
-      ) : resolvedUrl && clip.mediaType === "image" ? (
+      ) : clip.mediaUrl && clip.mediaType === "image" ? (
         <img
-          src={resolvedUrl}
+          src={authUrl(clip.mediaUrl)}
           alt={clip.title || clip.filename}
           className="w-full"
           style={{ maxHeight: "400px", objectFit: "contain", background: "#000" }}

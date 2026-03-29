@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { rpcCall } from "../../api/rpc";
+import { rpcCall, authUrl } from "../../api/rpc";
 import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 
@@ -120,7 +120,7 @@ function CharacterCard({
         }}
       >
         {group.imageUrl ? (
-          <img src={group.imageUrl} alt={displayName} className="w-full h-full object-cover" />
+          <img src={authUrl(group.imageUrl)} alt={displayName} className="w-full h-full object-cover" />
         ) : (
           <span className="text-3xl opacity-30">👤</span>
         )}
