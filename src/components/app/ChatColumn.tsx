@@ -67,6 +67,17 @@ export function ChatColumn() {
     if (hasScript) counts.push("script loaded");
     if (counts.length > 0) lines.push(counts.join(" · "));
 
+    // Guidance nudge based on state
+    if (content.total === 0 && !hasScript) {
+      lines.push("\nStart with your script — it helps me understand your footage better. Then upload your clips.");
+    } else if (content.total === 0 && hasScript) {
+      lines.push("\nScript loaded. Ready for footage — upload your clips.");
+    } else if (content.processing > 0) {
+      lines.push("\nProcessing in progress — I'll update you when clips are ready.");
+    } else if (content.total > 0 && content.ready > 0 && edits.total === 0) {
+      lines.push("\nFootage is ready. Want me to build an edit?");
+    }
+
     chat.addSystemMessage(lines.join("\n"));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProjectId, projectStatus.loading]);
