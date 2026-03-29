@@ -20,6 +20,16 @@ solution for a native desktop distribution.
 
 ---
 
+## Frontend — In Progress
+
+### Status card → real chat message (PIN)
+The project status card (welcome back + counts) is currently a hardcoded React component rendered as a special first element in the message list. It should be refactored into a system-generated `ChatMessage` pushed into the `messages[]` array on project entry — built from cached API data, rendered as a normal AI bubble. No special component needed.
+
+### Chat connected to clip processing
+When uploading a video, clip processing events (transcription, face detection, shot analysis) should surface in the chat column — either as streaming updates or as a summary message when processing completes. Currently the LogRail polls `clips.list` every 3s and shows state diffs. The chat is not notified. Needs investigation: does the backend emit anything during processing that the frontend could consume?
+
+---
+
 ## Backend Requests — Chat-Driven Workflow
 
 These are needed to support the chat architecture (spec 10) and agentic project management. Ordered by priority.
