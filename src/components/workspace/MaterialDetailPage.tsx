@@ -1,7 +1,32 @@
 import { useState, useEffect } from "react";
 import { cachedRpcCall } from "../../api/cachedRpc";
+import { API_BASE, getAuthToken } from "../../api/rpc";
 import { useApp } from "../../context/AppContext";
 import type { Clip, Shot } from "./MaterialsPage";
+
+/** Fetch a presigned URL for a media file by following the auth redirect */
+async function getPresignedMediaUrl(mediaUrl: string): Promise<string | null> {
+  if (!mediaUrl) return null;
+  try {
+    const token = getAuthToken();
+    const res = await fetch(`${API_BASE}${mediaUrl}`, {
+      method: "GET",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      redirect: "manual",
+    });
+    // Backend returns 302 with Location header pointing to presigned S3 URL
+    if (res.status === 302 || res.status === 301) {
+      return res.headers.get("Location");
+    }
+    // If redirect was followed automatically (browser), the final URL is the presigned one
+    if (res.ok && res.url !== `${API_BASE}${mediaUrl}`) {
+      return res.url;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 function formatTime(secs: number): string {
   const m = Math.floor(secs / 60);
@@ -18,17 +43,24 @@ export function MaterialDetailPage({
 }) {
   const { navigate } = useApp();
   const [clip, setClip] = useState<Clip | null>(null);
+  const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"shots" | "transcript">("shots");
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     cachedRpcCall<{ clips: Clip[] }>("clips.list", { projectId })
-      .then((data) => {
+      .then(async (data) => {
+        if (cancelled) return;
         const found = data.clips.find((c) => c.id === clipId) ?? null;
         setClip(found);
+        if (found?.mediaUrl) {
+          const url = await getPresignedMediaUrl(found.mediaUrl);
+          if (!cancelled) setResolvedUrl(url);
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [projectId, clipId]);
 
   if (loading) {
@@ -75,30 +107,32 @@ export function MaterialDetailPage({
       </div>
 
       {/* Media player */}
-      {clip.mediaType === "video" ? (
+      {resolvedUrl && clip.mediaType === "video" ? (
         <video
-          src={clip.mediaUrl}
+          src={resolvedUrl}
           controls
           className="w-full"
           style={{ background: "#000", maxHeight: "400px" }}
         />
-      ) : clip.mediaType === "audio" ? (
+      ) : resolvedUrl && clip.mediaType === "audio" ? (
         <div className="px-4 py-6" style={{ background: "var(--color-navy-900)" }}>
-          <audio src={clip.mediaUrl} controls className="w-full" />
+          <audio src={resolvedUrl} controls className="w-full" />
         </div>
-      ) : clip.mediaType === "image" ? (
+      ) : resolvedUrl && clip.mediaType === "image" ? (
         <img
-          src={clip.mediaUrl}
+          src={resolvedUrl}
           alt={clip.title || clip.filename}
           className="w-full"
           style={{ maxHeight: "400px", objectFit: "contain", background: "#000" }}
         />
       ) : (
         <div
-          className="flex items-center justify-center text-3xl"
+          className="flex items-center justify-center"
           style={{ background: "var(--color-navy-900)", aspectRatio: "16/9" }}
         >
-          <span style={{ color: "var(--color-bone-0)" }}>▶</span>
+          <span className="text-[14px]" style={{ color: "var(--color-text-muted)" }}>
+            {loading ? "Loading…" : "Media unavailable"}
+          </span>
         </div>
       )}
 
