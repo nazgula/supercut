@@ -26,7 +26,8 @@ export type WorkspacePage =
   | { type: "characters"; projectId: string }
   | { type: "character-detail"; projectId: string; groupId: string }
   | { type: "edits"; projectId: string }
-  | { type: "edit-detail"; projectId: string; editId: string; tab: "edl" | "renders" };
+  | { type: "edit-detail"; projectId: string; editId: string; tab: "edl" | "renders" }
+  | { type: "screening"; projectId: string; editId: string };
 
 // ─── Context ──────────────────────────────────────────────────
 

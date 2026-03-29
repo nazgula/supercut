@@ -5,6 +5,8 @@ import { useApp } from "../../context/AppContext";
 import { MaterialItem } from "../ui/MaterialItem";
 import type { MaterialItemData } from "../ui/MaterialItem";
 
+const SCRIPT_EXTENSIONS = new Set(["txt", "fountain", "fdx"]);
+
 // ─── Types ────────────────────────────────────────────────────
 
 export interface Shot {
@@ -120,8 +122,25 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
     setUploading(true);
     setUploadError(null);
     const errors: string[] = [];
+    let scriptDetected = false;
     try {
       for (const file of Array.from(files)) {
+        // Check for script file
+        const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+        if (SCRIPT_EXTENSIONS.has(ext)) {
+          try {
+            const text = await file.text();
+            if (text.trim()) {
+              await rpcCall("projects.updateScript", { projectId, script: text });
+              scriptDetected = true;
+              window.dispatchEvent(new CustomEvent("supercut:script-detected", { detail: { filename: file.name } }));
+            }
+          } catch {
+            errors.push(`${file.name}: failed to save as script`);
+          }
+          continue; // Don't upload script files as media
+        }
+
         const form = new FormData();
         form.append("file", file);
         form.append("projectId", projectId);
@@ -131,7 +150,6 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
             headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {},
             body: form,
           });
-          // Token may have expired — refresh once and retry
           if (res.status === 401) {
             const refreshed = await refreshAccessToken();
             if (refreshed) {
@@ -158,6 +176,10 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
         setUploadError(errors.join(" · "));
       }
       await loadClips();
+      // Navigate to Script page if a script was detected in the upload batch
+      if (scriptDetected) {
+        navigate({ type: "script", projectId });
+      }
       // Start polling since new clips may be processing
       if (!pollRef.current) {
         pollRef.current = setInterval(loadClips, 3000);

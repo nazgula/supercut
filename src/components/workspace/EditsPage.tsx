@@ -21,8 +21,10 @@ export function EditsPage({ projectId }: { projectId: string }) {
   const [showNewInput, setShowNewInput] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [creating, setCreating] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
 
-  async function load() {
+  async function loadEdits() {
     try {
       const data = await cachedRpcCall<{ edits: Edit[] }>("edits.list", { projectId });
       setEdits(data.edits);
@@ -33,7 +35,7 @@ export function EditsPage({ projectId }: { projectId: string }) {
 
   useEffect(() => {
     setLoading(true);
-    load();
+    loadEdits();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
@@ -119,24 +121,63 @@ export function EditsPage({ projectId }: { projectId: string }) {
       ) : (
         <div className="flex flex-col gap-2">
           {edits.map((edit) => (
-            <button
+            <div
               key={edit.id}
-              onClick={() =>
-                navigate({ type: "edit-detail", projectId, editId: edit.id, tab: "edl" })
-              }
-              className="flex items-center gap-3 px-4 py-3.5 rounded-lg border text-left cursor-pointer transition-colors"
+              className="flex items-center gap-3 px-4 py-3.5 rounded-lg border"
               style={{
                 background: "var(--color-bone-0)",
                 borderColor: "var(--color-bone-50)",
               }}
             >
-              <div className="flex-1 text-[12px] font-medium" style={{ color: "var(--color-text)" }}>
-                {edit.title}
+              {/* Title — inline rename on double-click */}
+              {renamingId === edit.id ? (
+                <input
+                  autoFocus
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && renameValue.trim()) {
+                      await rpcCall("edits.update", { editId: edit.id, title: renameValue.trim() });
+                      setRenamingId(null);
+                      loadEdits();
+                    }
+                    if (e.key === "Escape") setRenamingId(null);
+                  }}
+                  onBlur={() => setRenamingId(null)}
+                  className="flex-1 text-[14px] font-medium outline-none bg-transparent"
+                  style={{ color: "var(--color-text)" }}
+                />
+              ) : (
+                <div
+                  className="flex-1 text-[14px] font-medium cursor-pointer"
+                  style={{ color: "var(--color-text)" }}
+                  onClick={() => navigate({ type: "edit-detail", projectId, editId: edit.id, tab: "edl" })}
+                  onDoubleClick={() => {
+                    setRenamingId(edit.id);
+                    setRenameValue(edit.title);
+                  }}
+                  title="Double-click to rename"
+                >
+                  {edit.title}
+                </div>
+              )}
+
+              {/* Status + actions */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-[11px] font-mono" style={{ color: "var(--color-text-muted)" }}>
+                  {edit.renderPath ? "rendered" : edit.timeline ? "EDL ready" : "no EDL"}
+                </span>
+                {edit.renderPath && (
+                  <button
+                    onClick={() => navigate({ type: "screening", projectId, editId: edit.id })}
+                    className="text-[11px] font-medium cursor-pointer px-2 py-0.5 rounded"
+                    style={{ color: "var(--color-navy-700)", background: "var(--color-bone-25)" }}
+                  >
+                    Screen
+                  </button>
+                )}
               </div>
-              <div className="text-[9px] font-mono" style={{ color: "var(--color-text-muted)" }}>
-                {edit.renderPath ? "1 render" : edit.timeline ? "EDL ready" : "No EDL"}
-              </div>
-            </button>
+            </div>
           ))}
         </div>
       )}

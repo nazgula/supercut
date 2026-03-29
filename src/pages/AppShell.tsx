@@ -8,6 +8,7 @@ import { CharacterDetailPage } from "../components/workspace/CharacterDetailPage
 import { EditsPage } from "../components/workspace/EditsPage";
 import { EditDetailPage } from "../components/workspace/EditDetailPage";
 import { ScriptPage } from "../components/workspace/ScriptPage";
+import { ScreeningPage } from "../components/workspace/ScreeningPage";
 
 const TAB_LABELS: Array<{ type: "materials" | "script" | "characters" | "edits"; label: string }> = [
   { type: "materials", label: "Materials" },
@@ -36,7 +37,7 @@ function AppShellInner() {
       ? "script"
       : page.type === "characters" || page.type === "character-detail"
       ? "characters"
-      : page.type === "edits" || page.type === "edit-detail"
+      : page.type === "edits" || page.type === "edit-detail" || page.type === "screening"
       ? "edits"
       : null;
 
@@ -165,5 +166,7 @@ function WorkspaceRouter({ page }: { page: WorkspacePage }) {
       return <EditsPage projectId={page.projectId} />;
     case "edit-detail":
       return <EditDetailPage projectId={page.projectId} editId={page.editId} tab={page.tab} />;
+    case "screening":
+      return <ScreeningPage projectId={page.projectId} editId={page.editId} />;
   }
 }

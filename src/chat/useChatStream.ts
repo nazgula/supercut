@@ -118,10 +118,15 @@ export function useChatStream({
         break;
       case "edits":
       case "edit-detail":
+      case "screening":
         ctx.activeTab = "edits";
         if (page.type === "edit-detail") {
           ctx.selectedEditId = page.editId;
           ctx.selectedEditTab = page.tab === "renders" ? "renders" : "spec";
+        }
+        if (page.type === "screening") {
+          ctx.selectedEditId = page.editId;
+          ctx.selectedEditTab = "renders";
         }
         break;
     }
