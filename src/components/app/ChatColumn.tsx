@@ -195,16 +195,14 @@ export function ChatColumn() {
 
       {/* ─── Project state: no messages yet (welcome + status) ─── */}
       {!isLanding && hasProject && !hasMessages && (
-        <div className="flex-1 flex flex-col px-[10%] py-6">
-          {/* Welcome + status card at top */}
-          <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 relative">
+          {/* Status card — vertically centered in the full column */}
+          <div className="absolute inset-0 flex items-center justify-center px-[10%]">
             <ProjectStatusCard projectId={activeProjectId!} />
           </div>
 
           {/* Input pinned at bottom */}
-          <div
-            className="flex items-center gap-2 py-3 flex-shrink-0"
-          >
+          <div className="absolute bottom-0 left-0 right-0 flex items-center gap-2 px-[10%] py-3">
             <input
               autoFocus
               value={chatInput}
