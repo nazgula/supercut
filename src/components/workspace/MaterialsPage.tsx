@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getAuthToken, refreshAccessToken, API_BASE } from "../../api/rpc";
+import { rpcCall, getAuthToken, refreshAccessToken, API_BASE } from "../../api/rpc";
 import { cachedRpcCall } from "../../api/cachedRpc";
 import { useApp } from "../../context/AppContext";
 import { MaterialItem } from "../ui/MaterialItem";
@@ -167,6 +167,18 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
     }
   }
 
+  async function handleReprocess(clipId: string) {
+    try {
+      await rpcCall("clips.reprocess", { clipId });
+      await loadClips();
+      if (!pollRef.current) {
+        pollRef.current = setInterval(loadClips, 3000);
+      }
+    } catch {
+      setUploadError(`Failed to reprocess clip`);
+    }
+  }
+
   const filtered = clips.filter((c) => c.mediaType === activeTab);
   const countByType = (t: MediaTypeFilter) => clips.filter((c) => c.mediaType === t).length;
   const hasClips = clips.length > 0;
@@ -278,16 +290,41 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
       ) : (
         <div className="flex flex-col gap-1.5">
           {filtered.map((clip) => (
-            <div
-              key={clip.id}
-              className="cursor-pointer"
-              onClick={() =>
-                clip.status === "ready"
-                  ? navigate({ type: "material-detail", projectId, clipId: clip.id })
-                  : undefined
-              }
-            >
-              <MaterialItem {...clipToItemData(clip)} />
+            <div key={clip.id}>
+              <div
+                className={clip.status === "ready" ? "cursor-pointer" : ""}
+                onClick={() =>
+                  clip.status === "ready"
+                    ? navigate({ type: "material-detail", projectId, clipId: clip.id })
+                    : undefined
+                }
+              >
+                <MaterialItem {...clipToItemData(clip)} />
+              </div>
+
+              {/* Error details + reprocess */}
+              {clip.status === "error" && (
+                <div
+                  className="flex items-start gap-2 px-4 py-2 ml-[3px] border-l-[3px] rounded-b-md text-[12px]"
+                  style={{
+                    borderColor: "var(--color-error)",
+                    background: "var(--color-error-subtle)",
+                    color: "var(--color-error)",
+                  }}
+                >
+                  <span className="flex-1">{clip.errorMessage || "Processing failed"}</span>
+                  <button
+                    onClick={() => handleReprocess(clip.id)}
+                    className="flex-shrink-0 px-2 py-0.5 rounded text-[11px] font-medium cursor-pointer transition-colors"
+                    style={{
+                      background: "var(--color-error)",
+                      color: "white",
+                    }}
+                  >
+                    Reprocess
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

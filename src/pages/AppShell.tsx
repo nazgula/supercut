@@ -7,9 +7,11 @@ import { CharactersPage } from "../components/workspace/CharactersPage";
 import { CharacterDetailPage } from "../components/workspace/CharacterDetailPage";
 import { EditsPage } from "../components/workspace/EditsPage";
 import { EditDetailPage } from "../components/workspace/EditDetailPage";
+import { ScriptPage } from "../components/workspace/ScriptPage";
 
-const TAB_LABELS: Array<{ type: "materials" | "characters" | "edits"; label: string }> = [
+const TAB_LABELS: Array<{ type: "materials" | "script" | "characters" | "edits"; label: string }> = [
   { type: "materials", label: "Materials" },
+  { type: "script", label: "Script" },
   { type: "characters", label: "Characters" },
   { type: "edits", label: "Edits" },
 ];
@@ -30,6 +32,8 @@ function AppShellInner() {
   const activeTab =
     page.type === "materials" || page.type === "material-detail"
       ? "materials"
+      : page.type === "script"
+      ? "script"
       : page.type === "characters" || page.type === "character-detail"
       ? "characters"
       : page.type === "edits" || page.type === "edit-detail"
@@ -151,6 +155,8 @@ function WorkspaceRouter({ page }: { page: WorkspacePage }) {
       return <MaterialsPage projectId={page.projectId} />;
     case "material-detail":
       return <MaterialDetailPage projectId={page.projectId} clipId={page.clipId} />;
+    case "script":
+      return <ScriptPage projectId={page.projectId} />;
     case "characters":
       return <CharactersPage projectId={page.projectId} />;
     case "character-detail":

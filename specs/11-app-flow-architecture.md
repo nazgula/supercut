@@ -2,187 +2,130 @@
 spec: 11
 title: App Flow Architecture — Workspace + Chat Integration
 status: executing
+revision: 2
 ---
 
 ## Overview
 
-This spec defines the end-to-end project lifecycle, workspace pages, chat behavior, and implementation order. Phase 1 implements what the backend supports today. Phase 2 adds the system chat layer. Backend gaps are logged in OPEN_ISSUES.md.
+End-to-end project lifecycle, workspace pages, chat behavior. Implementation broken into small testable deliverables.
 
 ---
 
-## Project Lifecycle States
+## Project Status: Concurrent Tracks (not linear)
 
-Derived from data, not stored explicitly. The frontend computes this from clips, edits, renders.
+Projects don't follow a single linear path. Users can upload more content while reviewing an EDL. The status model uses **concurrent tracks**:
 
 ```
-created → script_pending → uploading → processing →
-characters_review → ready → edl_building → edl_review →
-rendering → screening → (iterate) → handoff
+Track: Content    [empty → uploading → processing → ready]  (restartable anytime)
+Track: Characters [pending → detected → reviewed]           (depends on content)
+Track: Edit       [no_script → has_script → edl → review]   (iterates)
+Track: Output     [no_render → rendering → screening]        (iterates)
 ```
 
-States and how they're derived:
+Overall project status is the combination. "Processing 2 clips, EDL under review, 1 render complete."
 
-| State | Derived from |
-|---|---|
-| `created` | Project exists, 0 clips |
-| `script_pending` | 0 clips, no script (nudge to add script first) |
-| `uploading` | Files being uploaded (frontend state) |
-| `processing` | Any clip has `status === "processing"` |
-| `characters_review` | All clips ready, face groups exist, not yet reviewed |
-| `ready` | All clips processed, characters identified |
-| `edl_building` | `edits.render` in progress (Gemini generating timeline) |
-| `edl_review` | Edit exists with timeline, no render yet |
-| `rendering` | Any render has `status === "rendering"` |
-| `screening` | Render complete (`status === "done"`) |
-| `handoff` | User exports to Premiere |
+### `useProjectStatus` hook — single source of truth
+
+```ts
+function useProjectStatus(projectId: string): {
+  content: { total: number; processing: number; ready: number; error: number };
+  characters: { total: number };
+  edits: { total: number; hasTimeline: boolean };
+  renders: { total: number; latest: "rendering" | "done" | "error" | null };
+  hasScript: boolean;
+}
+```
+
+Uses `cachedRpcCall` — works offline from cache. Used by both chat (system messages) and workspace (UI state).
 
 ---
 
 ## Workspace Pages
 
-### Existing (need updates)
-| Page | Component | Backend support |
+| Page | Status | Backend support |
 |---|---|---|
-| Materials | `MaterialsPage` | `clips.list`, `POST /upload`, `clips.reprocess` |
-| Characters | `CharactersPage` | `faces.list`, `faces.rename`, `faces.recluster` |
-| Edits (EDL) | `EditsPage` / `EditDetailPage` | `edits.list`, `edits.create`, `edits.render`, `edits.renderVideo` |
-
-### New pages needed
-| Page | Purpose | Backend support |
-|---|---|---|
-| Script | Display/verify script, upload script file | `projects.getScript`, `projects.updateScript` |
-| Selects | Best moments, darlings, alternatives | **None — needs backend** |
-| Screening | Video player + remarks + alternatives | `edits.renders` (video URL), rest is frontend |
+| Materials | Exists | `clips.list`, `POST /upload`, `clips.reprocess` |
+| Script | **Phase 1a** | `projects.getScript`, `projects.updateScript` |
+| Characters | Exists | `faces.list`, `faces.rename`, `faces.recluster` |
+| Selects | **Needs backend** | No endpoint — flagged in OPEN_ISSUES |
+| Edits (EDL) | Exists | `edits.list`, `edits.create`, `edits.render`, `edits.renderVideo` |
+| Screening | **Phase 1c** | `edits.renders` (video URL), rest is frontend |
 
 ---
 
-## Phase 1: Backend-supported features (no chat system messages)
+## Chat Message Roles
 
-Implement workspace pages and flows that the backend already supports.
+| Role | Source | Sent to backend? | Styling |
+|---|---|---|---|
+| `user` | User typed | Yes | User bubble (right, slate) |
+| `assistant` | Backend AI | Yes | Editor bubble (left, surface-2) |
+| `system` | Frontend events | **No** | Editor bubble (same as assistant) |
 
-### 1a. Script workspace page
-- New tab in workspace header: "Script" (between Materials and Characters)
-- Upload zone: accept `.txt`, `.pdf`, `.fdx`, `.fountain`, `.doc`, `.docx`
-- Frontend reads file content (text extraction — `.txt` and `.fountain` only for now, others flag as "can't parse")
-- Display script text in a readable format
-- "Verify" button that stores via `projects.updateScript`
-- On bulk upload in Materials: check file extensions, if script-like file found → show in chat later (Phase 2)
-
-### 1b. Script detection on upload
-- When files are uploaded via MaterialsPage, check extensions
-- Script extensions: `.txt`, `.fountain`, `.fdx`
-- If detected: extract text, auto-navigate to Script page, pre-populate
-- If not detected: no action (Phase 2 adds chat nudge)
-
-### 1c. Render options
-- Currently hardcoded 1920x1080. Add dropdown in EditDetailPage for resolution presets
-- **Backend gap:** `edits.renderVideo` doesn't accept size/quality params → flag in OPEN_ISSUES
-- For now: show dropdown but only 1080p is functional
-
-### 1d. Screening workspace page
-- New tab: "Screening" (after Edits)
-- Video player (HTML5 `<video>`) playing the rendered file URL from `edits.renders`
-- Pause + add timestamped remark (stored locally, sent as context to next EDL build via chat)
-- Show EDL timeline alongside for reference
-- List of renders (latest first), each nameable
-
-### 1e. Error visibility
-- `clips.list` returns `errorMessage` field — surface it in MaterialsPage clip cards
-- Show full error text, not just "error" badge
-- Add "Reprocess" button per clip (calls `clips.reprocess`)
-
-### 1f. EDL history
-- EditDetailPage: list all edits for project, ordered latest first
-- Each edit can be named (uses `edits.update` which exists)
-- Shows attached renders
+System messages are the Editor's voice, generated locally. The user doesn't need to know whether "Render complete" came from Claude or the app. Sliding window filter strips them before API calls.
 
 ---
 
-## Phase 2: System chat layer
+## Implementation Phases
 
-After Phase 1 is working, add frontend-generated chat messages.
+### Phase 1a: Foundation (current)
+- `useProjectStatus` hook — derives project state from cached API data
+- Error visibility in MaterialsPage — show `errorMessage` text, reprocess button
+- Script workspace page — view/edit/verify script, `projects.getScript`/`updateScript`
+- **Tests + manual checkpoint**
 
-### Message type: `system`
-```ts
-{ id, role: "system", content: string }
-```
-- Styled as Editor bubbles
-- NOT sent to backend in conversation history
-- Generated by event handlers
+### Phase 1b: Upload flow
+- Script detection on file upload (`.txt`, `.fountain`, `.fdx` extensions)
+- Auto-navigate to Script page when script file detected
+- **Manual checkpoint**
 
-### Event bus: `supercut:*` CustomEvents
+### Phase 1c: Screening + EDL history
+- Screening page — video player, render list (latest first), remarks
+- EDL naming — uses existing `edits.update`
+- **Manual checkpoint**
 
-| Event | Trigger | System message |
+### Phase 2a: System messages
+- Add `role: "system"` to `ChatMessage` type
+- Welcome message as system message (replace `ProjectStatusCard` component)
+- Clip processing status → system messages (from polling diffs)
+- Filter system messages from sliding window before API calls
+
+### Phase 2b: Chat guidance
+- State-aware nudges using `useProjectStatus`:
+  - New project, no script → "Start with your script for better results"
+  - Processing complete → summary with counts
+  - EDL built → "N suggestions to review"
+  - Render complete → navigate to screening
+
+### Phase 3: Backend-dependent features (as tools become available)
+- Selects page (needs `selects.generate`)
+- Render options (needs `edits.renderVideo` params)
+- Agentic project naming (needs `projects.update`)
+- Processing SSE (needs backend SSE endpoint)
+
+---
+
+## Event Bus
+
+Workspace pages emit `supercut:*` CustomEvents. Chat listens and generates system messages.
+
+| Event | Emitted by | System message |
 |---|---|---|
-| `supercut:project-created` | New project from landing | "Project created. Got a script? Upload it first for better results." |
-| `supercut:upload-started` | Files dropped/selected | "Uploading N files..." |
-| `supercut:upload-complete` | All uploads done | "N files uploaded. Processing..." |
-| `supercut:script-detected` | Script file found in upload | "Looks like [filename] is a script. Want to verify it?" |
-| `supercut:clip-ready` | Clip status → ready | "✓ [clip name] — N shots, [duration]" |
-| `supercut:clip-error` | Clip status → error | "✗ [clip name]: [error message]" |
-| `supercut:processing-done` | All clips ready | "[Summary: N clips, N shots, N characters]" |
-| `supercut:edl-built` | Edit created with timeline | "EDL ready. N shots in the timeline." |
-| `supercut:render-started` | Render kicked off | "Rendering [edit name]..." |
-| `supercut:render-done` | Render status → done | "Render complete." + navigate to screening |
-| `supercut:render-error` | Render status → error | "Render failed: [error]" |
+| `supercut:upload-started` | MaterialsPage | "Uploading N files..." |
+| `supercut:clip-ready` | MaterialsPage (polling) | "✓ [name] — N shots" |
+| `supercut:clip-error` | MaterialsPage (polling) | "✗ [name]: [error]" |
+| `supercut:processing-done` | MaterialsPage (polling) | Summary card |
+| `supercut:script-detected` | MaterialsPage (upload) | "Found script: [name]" |
+| `supercut:edl-built` | EditsPage | "EDL ready" |
+| `supercut:render-done` | EditDetailPage (polling) | "Render complete" |
 
-### Chat guidance rules
-
-| Context | Guidance level | Example |
-|---|---|---|
-| New project, no script | **Opinionated** | "Start with your script — it'll help me understand your footage." |
-| New project, has script | Light | "Script loaded. Ready for footage." |
-| Processing complete | Informational | "All files processed. 4 clips, 12 shots, 3 characters." |
-| EDL review | Helpful | "5 suggestions to improve this edit." |
-| Render complete | Action | Navigate to screening workspace |
+CustomEvents are fine for now. If event count exceeds ~10, extract a typed emitter class.
 
 ---
 
-## Phase 3: Chat as executor (MCP tools)
+## Backend Requests
 
-Already implemented in `useChatStream`. The backend chat agent can:
-- Navigate workspace (`navigate` event)
-- Ask clarifying questions (`question` event)
-- Execute MCP tools (create/delete edits, rename characters, reprocess, etc.)
-- Display tool activity (tool_start/tool_done)
-
-What's needed for full flow:
-- Chat agent system prompt needs project lifecycle awareness
-- Chat should know current workspace state (uiContext already sent)
-- Backend MCP tools missing: `update_project`, selects, render options
-
----
-
-## Backend requests (→ OPEN_ISSUES.md)
-
-| Request | Priority | Why |
-|---|---|---|
-| `projects.update` RPC + MCP | HIGH | Rename, description, duration fields |
-| Render options in `edits.renderVideo` | HIGH | Size/quality params (720p, 1080p, 4K) |
-| Selects endpoint | HIGH | Best moments, darlings, alternatives |
-| Processing SSE | MEDIUM | Step-level progress instead of polling |
-| `projects.list` with counts | MEDIUM | Avoid N+1 API calls for status card |
-| Premiere XML export | LOW | Could be frontend-only from EDL data |
-| Resumable processing | LOW | Currently `clips.reprocess` restarts fully |
-| Rich error details | LOW | Processing step that failed, not just message |
-
----
-
-## Implementation order
-
-```
-Phase 1a: Script page + detection on upload
-Phase 1b: Error visibility + reprocess button in Materials
-Phase 1c: Screening page (video player + remarks)
-Phase 1d: EDL history + naming
-Phase 1e: Render options dropdown (UI only, single resolution)
-→ Manual testing checkpoint
-
-Phase 2a: System message type + event bus
-Phase 2b: Upload/processing events → chat messages
-Phase 2c: Status-aware guidance (new project nudge, processing summary)
-Phase 2d: Welcome message as real chat message (refactor status card)
-→ Manual testing checkpoint
-
-Phase 3: Chat executor enhancements (as backend tools become available)
-```
+See OPEN_ISSUES.md — 15 prioritized requests. Key blockers for Phase 3:
+- `projects.update` (naming, description, duration)
+- `selects.generate` (selects page)
+- `edits.renderVideo` params (render options)
+- Processing SSE (step-level progress)

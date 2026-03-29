@@ -108,6 +108,9 @@ export function useChatStream({
         ctx.activeTab = "clips";
         if (page.type === "material-detail") ctx.expandedClipId = page.clipId;
         break;
+      case "script":
+        ctx.activeTab = "script";
+        break;
       case "characters":
       case "character-detail":
         ctx.activeTab = "characters";

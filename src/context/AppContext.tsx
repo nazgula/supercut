@@ -22,6 +22,7 @@ export type WorkspacePage =
   | { type: "landing" }
   | { type: "materials"; projectId: string }
   | { type: "material-detail"; projectId: string; clipId: string }
+  | { type: "script"; projectId: string }
   | { type: "characters"; projectId: string }
   | { type: "character-detail"; projectId: string; groupId: string }
   | { type: "edits"; projectId: string }
