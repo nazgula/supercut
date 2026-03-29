@@ -279,7 +279,7 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
           ref={fileInputRef}
           type="file"
           multiple
-          accept="video/*,image/*,audio/*"
+          accept="video/*,image/*,audio/*,.txt,.fountain,.fdx"
           className="hidden"
           onChange={(e) => { if (e.target.files) uploadFiles(e.target.files); }}
         />
