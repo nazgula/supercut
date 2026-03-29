@@ -3,8 +3,8 @@ import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useChatStream } from "../../chat/useChatStream";
 import { extractProjectName } from "../../chat/types";
+import { useProjectStatus } from "../../hooks/useProjectStatus";
 import { ChatBubble } from "../ui/ChatBubble";
-import { ProjectStatusCard } from "./ProjectStatusCard";
 import type { Clip } from "../workspace/MaterialsPage";
 
 // ─── Log line (clip processing updates from polling) ──────────
@@ -27,10 +27,49 @@ export function ChatColumn() {
   const { user } = useAuth();
 
   const chat = useChatStream({ activeProjectId, page, navigate, refreshProjects });
+  const projectStatus = useProjectStatus(activeProjectId);
+  const { projects } = useApp();
 
   const isLanding = page.type === "landing";
   const hasProject = activeProjectId != null;
   const hasMessages = chat.messages.length > 0;
+
+  // ─── Welcome system message on project entry ──────────────
+
+  const welcomeSentRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!activeProjectId || projectStatus.loading) return;
+    if (welcomeSentRef.current === activeProjectId) return;
+    // Only inject welcome if no messages exist for this project
+    if (chat.messages.length > 0) {
+      welcomeSentRef.current = activeProjectId;
+      return;
+    }
+
+    welcomeSentRef.current = activeProjectId;
+    const project = projects.find((p) => p.id === activeProjectId);
+    const name = project?.name ?? "this project";
+    const { content, characters, edits, hasScript } = projectStatus;
+
+    const lines = [`Welcome back to ${name}`];
+
+    // Status line
+    if (content.processing > 0) lines.push(`● Ingesting — ${content.processing} clip${content.processing !== 1 ? "s" : ""} processing`);
+    else if (content.error > 0) lines.push(`● ${content.error} clip${content.error !== 1 ? "s" : ""} with errors`);
+    else if (content.total > 0) lines.push("● Ready");
+
+    // Counts
+    const counts: string[] = [];
+    if (content.total > 0) counts.push(`${content.total} clip${content.total !== 1 ? "s" : ""}`);
+    if (characters.total > 0) counts.push(`${characters.total} character${characters.total !== 1 ? "s" : ""}`);
+    if (edits.total > 0) counts.push(`${edits.total} edit${edits.total !== 1 ? "s" : ""}`);
+    if (hasScript) counts.push("script loaded");
+    if (counts.length > 0) lines.push(counts.join(" · "));
+
+    chat.addSystemMessage(lines.join("\n"));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProjectId, projectStatus.loading]);
 
   // ─── Log rail state (clip processing) ─────────────────────
 
@@ -52,8 +91,10 @@ export function ChatColumn() {
         newLines.push({ clipId: clip.id, text: `⟳ ${clip.filename} — processing…`, state: "processing" });
       } else if (prevClip?.status === "processing" && clip.status === "ready") {
         newLines.push({ clipId: clip.id, text: `✓ ${clip.title || clip.filename}`, state: "done" });
+        chat.addSystemMessage(`✓ ${clip.title || clip.filename} — ready (${clip.shots?.length ?? 0} shots)`);
       } else if (prevClip?.status === "processing" && clip.status === "error") {
         newLines.push({ clipId: clip.id, text: `✗ ${clip.filename} — ${clip.errorMessage ?? "error"}`, state: "error" });
+        chat.addSystemMessage(`✗ ${clip.filename} failed: ${clip.errorMessage ?? "unknown error"}`);
       }
     }
 
@@ -67,9 +108,16 @@ export function ChatColumn() {
       setLogLines((prev) => [...prev, { clipId: "done", text: "✓ All files processed", state: "done" }]);
       if (logCollapseTimerRef.current) clearTimeout(logCollapseTimerRef.current);
       logCollapseTimerRef.current = setTimeout(() => setLogVisible(false), 4000);
+
+      const readyCount = clips.filter((c) => c.status === "ready").length;
+      const errorCount = clips.filter((c) => c.status === "error").length;
+      let summary = `All files processed. ${readyCount} ready`;
+      if (errorCount > 0) summary += `, ${errorCount} failed`;
+      chat.addSystemMessage(summary);
     }
 
     prevClipsRef.current = clips;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clips, hasProject]);
 
   useEffect(() => {
@@ -235,19 +283,14 @@ export function ChatColumn() {
             </div>
           )}
 
-          {/* Messages — status card is the first bubble in the flow */}
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto px-[10%] py-4 flex flex-col gap-3 justify-end">
-            {/* Status card — styled like an AI bubble */}
-            <div className="max-w-[85%] mr-auto bg-surface-2 border border-border rounded-md rounded-bl-[4px] px-4 py-3">
-              <div className="text-[12px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--color-text-muted)" }}>
-                Editor
-              </div>
-              <ProjectStatusCard projectId={activeProjectId!} />
-            </div>
-
-            {/* Conversation messages */}
             {chat.messages.map((msg) => (
-              <ChatBubble key={msg.id} role={msg.role === "user" ? "user" : "ai"} label={msg.role === "user" ? "You" : "Editor"}>
+              <ChatBubble
+                key={msg.id}
+                role={msg.role === "user" ? "user" : "ai"}
+                label={msg.role === "user" ? "You" : "Editor"}
+              >
                 {msg.content || (msg.streaming ? "…" : "")}
               </ChatBubble>
             ))}

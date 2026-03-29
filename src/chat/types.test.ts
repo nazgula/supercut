@@ -127,4 +127,29 @@ describe("slidingWindow", () => {
   it("returns empty array for empty input", () => {
     expect(slidingWindow([])).toEqual([]);
   });
+
+  it("filters out system messages", () => {
+    const msgs: ChatMessage[] = [
+      { id: "1", role: "system", content: "Welcome back" },
+      { id: "2", role: "user", content: "hi" },
+      { id: "3", role: "assistant", content: "hello" },
+      { id: "4", role: "system", content: "Clip ready" },
+    ];
+    const result = slidingWindow(msgs);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ role: "user", content: "hi" });
+    expect(result[1]).toEqual({ role: "assistant", content: "hello" });
+  });
+
+  it("applies limit after filtering system messages", () => {
+    const msgs: ChatMessage[] = [
+      ...Array.from({ length: 25 }, (_, i) => ({
+        id: `u${i}`, role: "user" as const, content: `msg ${i}`,
+      })),
+      { id: "sys", role: "system" as const, content: "system msg" },
+    ];
+    const result = slidingWindow(msgs);
+    expect(result).toHaveLength(20);
+    expect(result.every((m) => m.role === "user")).toBe(true);
+  });
 });

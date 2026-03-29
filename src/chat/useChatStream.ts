@@ -43,6 +43,7 @@ export interface UseChatStreamReturn {
   send: (text: string) => void;
   answerQuestion: (option: string) => void;
   cancel: () => void;
+  addSystemMessage: (content: string) => void;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────
@@ -341,5 +342,12 @@ export function useChatStream({
     abortRef.current?.abort();
   }, []);
 
-  return { messages, isStreaming, toolActivity, question, send, answerQuestion, cancel };
+  // ─── System message injection ─────────────────────────────
+
+  const addSystemMessage = useCallback((content: string) => {
+    const msg: ChatMessage = { id: crypto.randomUUID(), role: "system", content };
+    setMessages((prev) => [...prev, msg]);
+  }, []);
+
+  return { messages, isStreaming, toolActivity, question, send, answerQuestion, cancel, addSystemMessage };
 }

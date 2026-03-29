@@ -2,7 +2,7 @@
 
 export interface ChatMessage {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
   streaming?: boolean;
 }
@@ -80,7 +80,9 @@ export function parseSSELine(line: string): SSEEvent | null {
 const MAX_MESSAGES_TO_SEND = 20;
 
 export function slidingWindow(messages: ChatMessage[]): Array<{ role: string; content: string }> {
-  return messages.slice(-MAX_MESSAGES_TO_SEND).map((m) => ({
+  // Filter out system messages — they're frontend-generated, not for the backend
+  const conversational = messages.filter((m) => m.role !== "system");
+  return conversational.slice(-MAX_MESSAGES_TO_SEND).map((m) => ({
     role: m.role,
     content: m.content,
   }));
