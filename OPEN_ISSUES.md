@@ -114,5 +114,8 @@ Currently rejects non-media MIME types. Script files (`.txt`, `.fountain`, `.fdx
 ### No `brand` media type in API
 API accepts video/image/audio. No brand asset type. Brand tab in Materials omitted.
 
+### Face images return 401 from `<img>` tags
+`/faces/:groupId/:filename` requires JWT auth, but `<img src>` requests can't send Authorization headers. Face thumbnails in the Characters page fail with 401. Backend should either serve face images without auth or redirect to presigned S3 URLs (like `/uploads/*` and `/renders/*` already do).
+
 ### Face detection requires Python InsightFace venv on server
 `faces.detect` / `faces.detectAll` call a Python subprocess. If the venv isn't set up, calls fail silently. Frontend cannot detect this condition before calling.
