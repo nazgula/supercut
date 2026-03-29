@@ -38,54 +38,74 @@ These are needed to support the chat architecture (spec 10) and agentic project 
 Currently no way to rename or update a project after creation. Needed for:
 - **Agentic project naming:** chat agent suggests a name based on user's intent, user confirms, agent renames via tool
 - **Project description:** editorial intent, brief text
-- **Future:** project settings (frame rate, aspect ratio, etc.)
+- **Desired output duration:** e.g. "make me a 2-minute cut"
 
-**Add:** `projects.update` RPC method (accepts `name`, `description`) + `update_project` MCP tool.
+**Add:** `projects.update` RPC method (accepts `name`, `description`, `duration`) + `update_project` MCP tool.
+**Schema:** Add `description TEXT` and `target_duration REAL` columns to `projects` table.
 
-### `projects.list` with summary counts (HIGH)
-Frontend needs clip count, character count, edit count, and processing status per project for the `ProjectStatusCard` — without making 3 separate API calls per project.
+### Render options in `edits.renderVideo` (HIGH)
+Currently hardcoded to 1920x1080/30fps/h264. Frontend needs to pass resolution/quality.
+
+**Add:** optional `width`, `height`, `fps`, `quality` params to `edits.renderVideo`.
+Presets: 720p, 1080p, 4K.
+
+### Selects / darlings endpoint (HIGH)
+AI-generated best moments from footage analysis. No endpoint or MCP tool exists.
+
+**Add:** `selects.generate` RPC (params: `projectId`, criteria like "high emotion", "good alternatives") + `get_selects` MCP tool.
+Returns: array of `{ shotId, clipId, score, reason, category }`.
+Categories: "darling", "alternative", "b-roll candidate".
+
+### `projects.list` with summary counts (MEDIUM)
+Frontend needs clip count, character count, edit count, and processing status per project — without 3 separate API calls per project.
 
 **Add:** optional `include: ["counts"]` param to `projects.list` that returns `{ clipCount, characterCount, editCount, processingStatus }` per project.
 
-**Related previous issue:** "No clip count in `projects.list`" — this is the same gap.
-
 ### Clip processing SSE (MEDIUM)
-`processClipInBackground` logs to `console.log` only. Frontend can only poll `clips.list` every 3s for status changes. LogRail is simulated from polling state diffs — no step-level visibility (transcribing, face detection, etc.).
+`processClipInBackground` logs to `console.log` only. Frontend polls `clips.list` every 3s. No step-level visibility.
 
 **Add:** SSE endpoint for clip processing progress (step name, percentage, errors in real-time).
-
-**Request spec:** `specs/request/log-rail-sse.md` — send to Gadi.
-
-### Project status derivation (MEDIUM)
-Frontend needs to show whether a project is idle, ingesting, rendering, or assembling. Currently derived from polling `clips.list` for `status === "processing"`. No single source of truth.
-
-**Options:**
-- Add `status` field to `projects` table (backend updates on state changes)
-- Or: add a `projects.status` RPC that returns derived status from child entities
-- Or: include `processingStatus` in `projects.list` with counts (see above)
+**Request spec:** `specs/request/log-rail-sse.md`
 
 ### `clips.update` / `shots.update` RPC + MCP tools (MEDIUM)
-No way to update clip or shot title/description via RPC. Chat agent and UI both need this for:
-- Renaming clips after user reviews them
-- Adding shot notes / descriptions
-- Correcting auto-generated titles
+No way to update clip or shot title/description via RPC. Needed for renaming clips, adding shot notes, correcting auto-generated titles.
 
 **Add:** `clips.update` and `shots.update` RPC methods + `update_clip`, `update_shot` MCP tools.
 
-### Quality scores surfaced to client (LOW)
-Gemini and WhisperX produce quality assessments server-side but these are not returned in `clips.list`. The wireframe shows "Good / Low light / Sync issue" flags per clip. Chat agent could also report quality issues.
+### Rich error details in processing (MEDIUM)
+`clips.list` returns `errorMessage` but it's often a raw stack trace or "error". Frontend needs structured error info: which processing step failed (transcription? Gemini? face detection?), whether it's retryable.
+
+**Add:** `errorStep` and `retryable` fields to clip response.
+
+### Quality scores surfaced to client (MEDIUM)
+Gemini and WhisperX produce quality assessments server-side but these are not returned in `clips.list`. Needed for quality flags per clip and for chat to report quality issues.
 
 **Add:** `qualityFlags` field to clip response in `clips.list`.
 
-### Chat system prompt per project (LOW — future)
-The `supercut.md` global context and `[project_name].md` per-project context described in CLAUDE.md aren't loaded or sent to the chat backend yet. When the backend chat agent gets a system prompt, it should include both the global editing persona and the per-project context (editorial intent, character notes, decisions).
+### Suggestions endpoint (MEDIUM)
+Editorial suggestions: quality issues, missing coverage vs script, alternative takes. Could be a dedicated endpoint or an MCP tool the chat agent uses.
 
-This is a backend concern — the frontend sends `projectId` and the backend assembles the full prompt.
+**Add:** `suggestions.generate` RPC (params: `projectId`, `editId`) or `get_suggestions` MCP tool.
+Returns: `{ type, message, affectedShots, suggestedAction }[]`.
 
-### Gemini availability check (LOW)
-`edits.render` throws error code 3004 if `GEMINI_API_KEY` not set. Frontend handles gracefully but cannot check upfront.
+### Chat system prompt per project (LOW)
+`supercut.md` global context and `[project_name].md` per-project context aren't loaded by the backend chat agent yet. Backend should assemble the full prompt from both files + project state.
+
+### Premiere XML export (LOW)
+No endpoint. Can likely be frontend-only: generate XML from EDL timeline data. But backend could also provide `edits.exportPremiere` for more reliable output.
+
+### `system.status` RPC (LOW)
+Frontend can't check if Gemini or InsightFace are configured before calling endpoints that require them.
 
 **Add:** `system.status` RPC returning `{ gemini: boolean, insightface: boolean }`.
+
+### Text file upload via `POST /upload` (LOW)
+Currently rejects non-media MIME types. Script files (`.txt`, `.fountain`, `.fdx`) can't be uploaded via the standard upload endpoint. Frontend works around this by reading the file client-side and calling `projects.updateScript`.
+
+### Resumable clip processing (LOW)
+`clips.reprocess` restarts the full pipeline (WhisperX → Gemini → face detection). No way to resume from the step that failed. Full cost each time.
+
+**Consider:** `clips.reprocess` accepting a `fromStep` param.
 
 ---
 
@@ -94,11 +114,5 @@ This is a backend concern — the frontend sends `projectId` and the backend ass
 ### No `brand` media type in API
 API accepts video/image/audio. No brand asset type. Brand tab in Materials omitted.
 
-### No suggestions endpoint
-Wireframe shows a "Suggestions" tab on edit detail (quality issues, alt takes). Backend has no endpoint for editorial suggestions. Chat agent could potentially provide this via conversation instead of a dedicated endpoint.
-
-### Text file upload not supported
-`POST /upload` rejects non-video/image/audio MIME types. Script is stored as plain text via `projects.updateScript` — manual paste only.
-
 ### Face detection requires Python InsightFace venv on server
-`faces.detect` / `faces.detectAll` call a Python subprocess. If the venv isn't set up on the server, these calls fail silently or with an error. Frontend cannot detect this condition before calling.
+`faces.detect` / `faces.detectAll` call a Python subprocess. If the venv isn't set up, calls fail silently. Frontend cannot detect this condition before calling.
