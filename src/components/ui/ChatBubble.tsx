@@ -21,9 +21,10 @@ export function ChatBubble({
         "max-w-[85%] px-4 py-3",
         isUser
           ? "ml-auto bg-slate-400 text-text-on-dark rounded-md rounded-br-[4px]"
-          : "mr-auto bg-surface-2 border border-border text-text rounded-md rounded-bl-[4px]",
+          : "mr-auto border border-border text-text rounded-md rounded-bl-[4px]",
         className,
       ].join(" ")}
+      style={!isUser ? { background: "white" } : undefined}
     >
       {label && (
         <div
