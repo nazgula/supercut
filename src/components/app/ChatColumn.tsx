@@ -237,8 +237,8 @@ export function ChatColumn() {
 
           {/* Messages — status card is the first bubble in the flow */}
           <div className="flex-1 overflow-y-auto px-[10%] py-4 flex flex-col gap-3 justify-end">
-            {/* Status card — same alignment as AI bubbles, no container styling */}
-            <div className="max-w-[85%] mr-auto">
+            {/* Status card — styled like an AI bubble */}
+            <div className="max-w-[85%] mr-auto bg-surface-2 border border-border rounded-md rounded-bl-[4px] px-4 py-3">
               <div className="text-[12px] font-mono uppercase tracking-wider mb-1" style={{ color: "var(--color-text-muted)" }}>
                 Editor
               </div>
