@@ -74,13 +74,33 @@ export function MaterialDetailPage({
         )}
       </div>
 
-      {/* Player placeholder */}
-      <div
-        className="flex items-center justify-center text-3xl"
-        style={{ background: "var(--color-navy-900)", aspectRatio: "16/9" }}
-      >
-        <span style={{ color: "var(--color-bone-0)" }}>▶</span>
-      </div>
+      {/* Media player */}
+      {clip.mediaType === "video" ? (
+        <video
+          src={clip.mediaUrl}
+          controls
+          className="w-full"
+          style={{ background: "#000", maxHeight: "400px" }}
+        />
+      ) : clip.mediaType === "audio" ? (
+        <div className="px-4 py-6" style={{ background: "var(--color-navy-900)" }}>
+          <audio src={clip.mediaUrl} controls className="w-full" />
+        </div>
+      ) : clip.mediaType === "image" ? (
+        <img
+          src={clip.mediaUrl}
+          alt={clip.title || clip.filename}
+          className="w-full"
+          style={{ maxHeight: "400px", objectFit: "contain", background: "#000" }}
+        />
+      ) : (
+        <div
+          className="flex items-center justify-center text-3xl"
+          style={{ background: "var(--color-navy-900)", aspectRatio: "16/9" }}
+        >
+          <span style={{ color: "var(--color-bone-0)" }}>▶</span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex border-b" style={{ borderColor: "var(--color-bone-50)" }}>
