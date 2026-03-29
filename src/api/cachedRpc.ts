@@ -38,22 +38,31 @@ async function writeCache(
   params: Record<string, unknown>,
   data: unknown,
 ): Promise<void> {
-  const db = await getDb();
-  db.run(
-    `INSERT OR REPLACE INTO rpc_cache (cache_key, method, params_json, data_json, cached_at)
-     VALUES (?, ?, ?, ?, ?)`,
-    [key, method, JSON.stringify(params), JSON.stringify(data), new Date().toISOString()],
-  );
-  persistDb(db);
+  try {
+    const db = await getDb();
+    db.run(
+      `INSERT OR REPLACE INTO rpc_cache (cache_key, method, params_json, data_json, cached_at)
+       VALUES (?, ?, ?, ?, ?)`,
+      [key, method, JSON.stringify(params), JSON.stringify(data), new Date().toISOString()],
+    );
+    persistDb(db);
+  } catch {
+    // sql.js WASM init or DB write failed — skip caching silently
+  }
 }
 
 // ─── Read from cache ────────────────────────────────────────
 
 async function readCache<T>(key: string): Promise<T | null> {
-  const db = await getDb();
-  const result = db.exec("SELECT data_json FROM rpc_cache WHERE cache_key = ?", [key]);
-  if (!result.length || !result[0].values.length) return null;
-  return JSON.parse(result[0].values[0][0] as string) as T;
+  try {
+    const db = await getDb();
+    const result = db.exec("SELECT data_json FROM rpc_cache WHERE cache_key = ?", [key]);
+    if (!result.length || !result[0].values.length) return null;
+    return JSON.parse(result[0].values[0][0] as string) as T;
+  } catch {
+    // sql.js WASM init or DB read failed — no cached data available
+    return null;
+  }
 }
 
 // ─── Network error detection ────────────────────────────────
@@ -110,7 +119,11 @@ export async function cachedRpcCall<T = unknown>(
 // ─── Cache management ───────────────────────────────────────
 
 export async function clearRpcCache(): Promise<void> {
-  const db = await getDb();
-  db.run("DELETE FROM rpc_cache");
-  persistDb(db);
+  try {
+    const db = await getDb();
+    db.run("DELETE FROM rpc_cache");
+    persistDb(db);
+  } catch {
+    // sql.js not available — nothing to clear
+  }
 }
