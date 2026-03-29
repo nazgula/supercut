@@ -13,6 +13,7 @@ import { getDb, persistDb } from "../db/db";
 
 const CACHEABLE_METHODS = new Set([
   "projects.list",
+  "projects.getScript",
   "clips.list",
   "edits.list",
   "edits.renders",

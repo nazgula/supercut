@@ -169,13 +169,14 @@ export function MaterialsPage({ projectId }: { projectId: string }) {
 
   async function handleReprocess(clipId: string) {
     try {
-      await rpcCall("clips.reprocess", { clipId });
+      await rpcCall("clips.reprocess", { projectId, clipId });
       await loadClips();
       if (!pollRef.current) {
         pollRef.current = setInterval(loadClips, 3000);
       }
-    } catch {
-      setUploadError(`Failed to reprocess clip`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to reprocess clip";
+      setUploadError(msg);
     }
   }
 

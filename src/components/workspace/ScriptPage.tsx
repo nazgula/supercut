@@ -132,41 +132,16 @@ export function ScriptPage({ projectId }: ScriptPageProps) {
         </div>
       </div>
 
-      {/* Script editor */}
-      {!script && !isDirty ? (
-        <div
-          className="flex-1 flex flex-col items-center justify-center text-center border-2 border-dashed rounded-xl"
-          style={{ borderColor: "var(--color-bone-50)" }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            const file = e.dataTransfer.files[0];
-            if (file) handleFileUpload(file);
-          }}
-        >
-          <div className="text-[20px] mb-3" style={{ color: "var(--color-text-muted)" }}>📄</div>
-          <div className="text-[14px] mb-1.5" style={{ color: "var(--color-text-secondary)" }}>
-            No script yet
-          </div>
-          <div className="text-[12px] mb-4" style={{ color: "var(--color-text-muted)" }}>
-            Upload a script file (.txt, .fountain, .fdx) or paste text below
-          </div>
-          <button
-            onClick={() => {
-              setScript(" ");
-              setTimeout(() => {
-                textareaRef.current?.focus();
-                textareaRef.current?.setSelectionRange(0, 0);
-                setScript("");
-              }, 0);
-            }}
-            className="px-4 py-2 rounded-lg text-[12px] font-medium cursor-pointer border"
-            style={{ borderColor: "var(--color-bone-50)", color: "var(--color-navy-700)" }}
-          >
-            Start writing
-          </button>
-        </div>
-      ) : (
+      {/* Script editor — always show textarea, drop zone wraps it when empty */}
+      <div
+        className="flex-1 flex flex-col relative"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const file = e.dataTransfer.files[0];
+          if (file) handleFileUpload(file);
+        }}
+      >
         <textarea
           ref={textareaRef}
           value={script}
@@ -186,9 +161,9 @@ export function ScriptPage({ projectId }: ScriptPageProps) {
             lineHeight: "1.8",
             fontFamily: "var(--font-mono)",
           }}
-          placeholder="Paste or write your script here…"
+          placeholder="Paste or write your script here… (or drag a .txt / .fountain / .fdx file)"
         />
-      )}
+      </div>
     </div>
   );
 }
