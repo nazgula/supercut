@@ -193,25 +193,24 @@ export function ChatColumn() {
         </div>
       )}
 
-      {/* ─── Project state: no messages yet (centered prompt) ─── */}
+      {/* ─── Project state: no messages yet (welcome + status) ─── */}
       {!isLanding && hasProject && !hasMessages && (
-        <div className="flex-1 flex flex-col justify-center px-[10%] py-6">
-          <ProjectStatusCard projectId={activeProjectId!} />
-          <div className="mb-5">
-            <h2 className="text-[18px] font-medium mb-2" style={{ color: "var(--color-text)" }}>
-              What are we working on?
-            </h2>
-            <p className="text-[14px] leading-relaxed" style={{ color: "var(--color-text-secondary)" }}>
-              Ask about your footage, characters, or how to structure this edit.
-            </p>
+        <div className="flex-1 flex flex-col px-[10%] py-6">
+          {/* Welcome + status card at top */}
+          <div className="flex-1 flex flex-col justify-center">
+            <ProjectStatusCard projectId={activeProjectId!} />
           </div>
-          <div className="flex gap-2">
+
+          {/* Input pinned at bottom */}
+          <div
+            className="flex items-center gap-2 py-3 flex-shrink-0"
+          >
             <input
               autoFocus
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleChatSend(); }}
-              placeholder="Describe your edit…"
+              placeholder="Ask about your footage…"
               disabled={chat.isStreaming}
               className="flex-1 px-3 py-2.5 rounded-lg text-[14px] outline-none border"
               style={{ borderColor: "var(--color-bone-50)", background: "white", color: "var(--color-text)" }}
