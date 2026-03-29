@@ -24,43 +24,40 @@ export function ProjectStatusCard({ projectId }: ProjectStatusCardProps) {
     let cancelled = false;
 
     async function load() {
-      try {
-        const [clipsData, facesData, editsData] = await Promise.all([
-          cachedRpcCall<{ clips: Array<{ status: string }> }>("clips.list", { projectId }),
-          cachedRpcCall<{ groups: unknown[] }>("faces.list", { projectId }),
-          cachedRpcCall<{ edits: unknown[] }>("edits.list", { projectId }),
-        ]);
+      // Each call is independent — one failure doesn't block the others
+      const [clipsData, facesData, editsData] = await Promise.all([
+        cachedRpcCall<{ clips: Array<{ status: string }> }>("clips.list", { projectId }).catch(() => ({ clips: [] })),
+        cachedRpcCall<{ groups: unknown[] }>("faces.list", { projectId }).catch(() => ({ groups: [] })),
+        cachedRpcCall<{ edits: unknown[] }>("edits.list", { projectId }).catch(() => ({ edits: [] })),
+      ]);
 
-        if (cancelled) return;
+      if (cancelled) return;
 
-        const clips = clipsData.clips ?? [];
-        const ready = clips.filter((c) => c.status === "ready").length;
-        const processing = clips.filter((c) => c.status === "processing").length;
-        const error = clips.filter((c) => c.status === "error").length;
+      const clips = clipsData.clips ?? [];
+      const ready = clips.filter((c) => c.status === "ready").length;
+      const processing = clips.filter((c) => c.status === "processing").length;
+      const error = clips.filter((c) => c.status === "error").length;
 
-        let status: ProjectStatus = "idle";
-        if (processing > 0) status = "ingesting";
-        if (error > 0 && processing === 0) status = "error";
+      let status: ProjectStatus = "idle";
+      if (processing > 0) status = "ingesting";
+      if (error > 0 && processing === 0) status = "error";
 
-        setSummary({
-          clipCount: clips.length,
-          clipsByStatus: { ready, processing, error },
-          characterCount: (facesData.groups ?? []).length,
-          editCount: (editsData.edits ?? []).length,
-          status,
-        });
-      } catch {
-        // Silently fail — card is informational
-      }
+      setSummary({
+        clipCount: clips.length,
+        clipsByStatus: { ready, processing, error },
+        characterCount: (facesData.groups ?? []).length,
+        editCount: (editsData.edits ?? []).length,
+        status,
+      });
     }
 
     load();
     return () => { cancelled = true; };
   }, [projectId]);
 
-  if (!summary) return null;
-
-  const { label, color } = STATUS_LABELS[summary.status];
+  const { label, color } = summary
+    ? STATUS_LABELS[summary.status]
+    : { label: "Loading…", color: "var(--color-text-muted)" };
 
   return (
     <div
@@ -82,24 +79,26 @@ export function ProjectStatusCard({ projectId }: ProjectStatusCardProps) {
             {label}
           </span>
         </div>
-        <div
-          className="flex flex-wrap gap-x-5 gap-y-1 text-[12px]"
-          style={{ color: "var(--color-text-muted)" }}
-        >
-          <span>{summary.clipCount} clip{summary.clipCount !== 1 ? "s" : ""}</span>
-          <span>{summary.characterCount} character{summary.characterCount !== 1 ? "s" : ""}</span>
-          <span>{summary.editCount} edit{summary.editCount !== 1 ? "s" : ""}</span>
-          {summary.clipsByStatus.processing > 0 && (
-            <span style={{ color: "var(--color-warning)" }}>
-              {summary.clipsByStatus.processing} processing
-            </span>
-          )}
-          {summary.clipsByStatus.error > 0 && (
-            <span style={{ color: "var(--color-error)" }}>
-              {summary.clipsByStatus.error} failed
-            </span>
-          )}
-        </div>
+        {summary && (
+          <div
+            className="flex flex-wrap gap-x-5 gap-y-1 text-[12px]"
+            style={{ color: "var(--color-text-muted)" }}
+          >
+            <span>{summary.clipCount} clip{summary.clipCount !== 1 ? "s" : ""}</span>
+            <span>{summary.characterCount} character{summary.characterCount !== 1 ? "s" : ""}</span>
+            <span>{summary.editCount} edit{summary.editCount !== 1 ? "s" : ""}</span>
+            {summary.clipsByStatus.processing > 0 && (
+              <span style={{ color: "var(--color-warning)" }}>
+                {summary.clipsByStatus.processing} processing
+              </span>
+            )}
+            {summary.clipsByStatus.error > 0 && (
+              <span style={{ color: "var(--color-error)" }}>
+                {summary.clipsByStatus.error} failed
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
